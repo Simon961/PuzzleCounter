@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- The app is always dark: so is the window behind the Compose content, otherwise it flashes white on start. -->
+    <style name="Theme.PuzzleCounter" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

@@ -1,0 +1,593 @@
+package com.example.puzzlecounter.ui
+
+import android.net.Uri
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Construction
+import androidx.compose.material.icons.rounded.Extension
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
+import kotlin.math.ceil
+import java.text.DateFormat
+import java.util.Date
+import kotlin.time.Duration.Companion.seconds
+
+@Composable
+fun AppBackground(uiState: PuzzleUiState, content: @Composable () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = uiState.selectedBackgroundId),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = (1.0f - uiState.backgroundBrightness) * 0.94f))
+        )
+        content()
+    }
+}
+
+@Composable
+fun SplashScreen(uiState: PuzzleUiState, onTimeout: () -> Unit) {
+    LaunchedEffect(Unit) {
+        delay(2.seconds)
+        onTimeout()
+    }
+    AppBackground(uiState = uiState) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Extension,
+                contentDescription = null,
+                modifier = Modifier.size(100.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = "PuzzleCounter",
+                style = MaterialTheme.typography.displaySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Keine fehlenden Teile mehr",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClicked: () -> Unit, onSettingsClicked: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+
+    AppBackground(uiState = uiState) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("PuzzleCounter", fontWeight = FontWeight.Bold) },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    actions = {
+                        IconButton(onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onSettingsClicked()
+                        }) {
+                            Icon(Icons.Rounded.Settings, contentDescription = "Einstellungen", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        IconButton(onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onDebugClicked()
+                        }) {
+                            Icon(Icons.Rounded.Construction, contentDescription = "Entwickler-Inspektor")
+                        }
+                    }
+                )
+            },
+            containerColor = Color.Transparent
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onStartClicked()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Icon(Icons.Rounded.Add, contentDescription = null)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Neues Puzzle prüfen", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                Text(
+                    text = "Letzte Überprüfungen",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.height(16.dp))
+
+                if (uiState.history.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.history) { entry ->
+                            val isComplete = entry.target == entry.actual
+                            ElevatedCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column {
+                                        Text(entry.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "Soll: ${entry.target}  |  Ist: ${entry.actual}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = remember(entry.date) { DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(entry.date)) },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(50),
+                                        color = if (isComplete) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isComplete) Icons.Rounded.Check else Icons.Rounded.Warning,
+                                            contentDescription = null,
+                                            tint = if (isComplete) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(12.dp).size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.History,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text("Noch keine Überprüfungen vorhanden", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** The piece counts that puzzles are usually sold with. */
+private val standardSizes = listOf(200, 500, 1000, 1500, 2000, 5000)
+
+/** Five digits are more than any puzzle has, and keep the number far away from overflowing. */
+private const val MAX_PIECE_COUNT_DIGITS = 5
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SelectionScreen(uiState: PuzzleUiState, onNextClicked: (Int) -> Unit) {
+    var customCount by rememberSaveable { mutableStateOf("") }
+    var selectedSize by rememberSaveable { mutableStateOf<Int?>(null) }
+    val haptic = LocalHapticFeedback.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    val count = selectedSize ?: customCount.toIntOrNull()?.takeIf { it > 0 }
+
+    fun next() {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+        if (count != null) onNextClicked(count)
+    }
+
+    AppBackground(uiState = uiState) {
+        Scaffold(
+            topBar = { TopAppBar(title = { Text("Größe wählen", fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)) },
+            containerColor = Color.Transparent,
+            modifier = Modifier.imePadding().clickable { focusManager.clearFocus() }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(16.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth().height(296.dp),
+                    userScrollEnabled = false
+                ) {
+                    items(standardSizes) { size ->
+                        val isSelected = selectedSize == size
+                        OutlinedCard(
+                            modifier = Modifier
+                                .height(88.dp)
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    selectedSize = size
+                                    customCount = ""
+                                    focusManager.clearFocus()
+                                    keyboardController?.hide()
+                                },
+                            colors = CardDefaults.outlinedCardColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                            ),
+                            border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = size.toString(),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Teile",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedTextField(
+                    value = customCount,
+                    onValueChange = { input ->
+                        if (input.length <= MAX_PIECE_COUNT_DIGITS && input.all { it.isDigit() }) {
+                            customCount = input
+                            selectedSize = null
+                        }
+                    },
+                    label = { Text("Oder eigene Anzahl eingeben") },
+                    supportingText = { Text("Anzahl der Teile laut Packung") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { next() }),
+                    singleLine = true,
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        next()
+                    },
+                    modifier = Modifier.fillMaxWidth().height(64.dp).padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(50),
+                    enabled = count != null
+                ) {
+                    Text("Weiter", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null)
+                }
+                Spacer(Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InstructionScreen(uiState: PuzzleUiState, onStartScan: () -> Unit, onPickPhoto: (Uri) -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val openPhotoPicker = rememberPhotoPicker(onPickPhoto)
+
+    AppBackground(uiState = uiState) {
+        Scaffold(
+            topBar = { TopAppBar(title = { Text("Anleitung", fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)) },
+            containerColor = Color.Transparent
+        ) { padding ->
+            Column(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(16.dp))
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(12.dp))
+                            Text("Vorbereitung", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(Modifier.height(16.dp))
+
+                        if (uiState.calculatedPiles <= 1) {
+                            Text(
+                                text = "Alle Teile passen auf ein Foto. Breite sie flach und mit etwas Abstand nebeneinander aus.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            val perPile = ceil(uiState.targetPieceCount / uiState.calculatedPiles.toDouble()).toInt()
+                            Text(
+                                text = "Teile das Puzzle in ${uiState.calculatedPiles} etwa gleich große Haufen auf (ca. $perPile Teile pro Foto).",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+                                Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    text = "Wichtig: Breite jeden Haufen komplett flach aus. Teile dürfen sich nicht stapeln und sollten sich möglichst nicht berühren.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Fotografiert und analysiert wird der quadratische Bildausschnitt. Alle Teile eines Haufens müssen komplett darin liegen. " +
+                                "Du kannst auch ein vorhandenes Foto hochladen (Symbol neben dem Button).",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onStartScan()
+                        },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Icon(Icons.Rounded.CameraAlt, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Scanner starten", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                    UploadPhotoButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            openPhotoPicker()
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ResultScreen(uiState: PuzzleUiState, onRestart: () -> Unit) {
+    val texts = resultTexts(uiState.targetPieceCount, uiState.countedPieces, uiState.countedClusters)
+    val isComplete = texts.outcome == Outcome.COMPLETE
+    val accent = when (texts.outcome) {
+        Outcome.COMPLETE -> MaterialTheme.colorScheme.secondary
+        Outcome.TOO_MANY -> MaterialTheme.colorScheme.tertiary
+        Outcome.MISSING -> MaterialTheme.colorScheme.error
+    }
+    val accentContainer = when (texts.outcome) {
+        Outcome.COMPLETE -> MaterialTheme.colorScheme.secondaryContainer
+        Outcome.TOO_MANY -> MaterialTheme.colorScheme.tertiaryContainer
+        Outcome.MISSING -> MaterialTheme.colorScheme.errorContainer
+    }
+    val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(isComplete) {
+        if (isComplete) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
+
+    AppBackground(uiState = uiState) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = accentContainer,
+                    modifier = Modifier.size(104.dp)
+                ) {
+                    Icon(
+                        imageVector = when (texts.outcome) {
+                            Outcome.COMPLETE -> Icons.Rounded.CheckCircle
+                            Outcome.TOO_MANY -> Icons.AutoMirrored.Rounded.HelpOutline
+                            Outcome.MISSING -> Icons.Rounded.Warning
+                        },
+                        contentDescription = null,
+                        modifier = Modifier.padding(24.dp).fillMaxSize(),
+                        tint = accent
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "Soll: ${uiState.targetPieceCount}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Ist: ${uiState.countedPieces}",
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = texts.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = accent,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = texts.message,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = accent,
+                    textAlign = TextAlign.Center
+                )
+                for (note in listOfNotNull(texts.hint, texts.estimate)) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onRestart()
+                },
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+                shape = RoundedCornerShape(50)
+            ) {
+                Text("Neues Puzzle prüfen", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
