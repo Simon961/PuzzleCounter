@@ -10,7 +10,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * End-to-end check that `puzzle_model.tflite` is loaded and run exactly the way
+ * End-to-end check that `puzzle_model_20.tflite` is loaded and run exactly the way
  * [PuzzleModel] / [TFLitePieceDetector] expect: real asset, real Play-services TFLite
  * runtime, real inference on a device - no mocks.
  *
@@ -23,19 +23,21 @@ class PuzzleModelInstrumentedTest {
     fun modelLoads_andContractMatchesTheRealAsset() {
         val model = PuzzleModel.create(InstrumentationRegistry.getInstrumentation().targetContext)
         try {
-            // Verified against the actual puzzle_model.tflite via flatbuffer inspection:
-            // args_0 [1,3,640,640] NCHW, output_0 [1,37,8400] channel-major, output_1 [1,32,160,160].
-            assertEquals(listOf(1, 3, 640, 640), model.inputShape.toList())
-            assertEquals(640, model.inputSize)
+            // Verified against the actual puzzle_model_20.tflite via flatbuffer inspection (YOLO26m-seg, imgsz 1024):
+            // args_0 [1,3,1024,1024] NCHW, output_0 [1,37,21504] channel-major, output_1 [1,32,256,256].
+            // The 21504 anchors are the grids of the strides 8, 16 and 32: 128² + 64² + 32².
+            assertEquals(listOf(1, 3, 1024, 1024), model.inputShape.toList())
+            assertEquals(1024, model.inputSize)
 
-            assertEquals(listOf(1, 37, 8400), model.detectionShape.toList())
+            assertEquals(listOf(1, 37, 21504), model.detectionShape.toList())
             assertEquals(37, model.numChannels)
-            assertEquals(8400, model.numAnchors)
+            assertEquals(21504, model.numAnchors)
+            assertEquals(128 * 128 + 64 * 64 + 32 * 32, model.numAnchors)
 
-            assertEquals(listOf(1, 32, 160, 160), model.protoShape.toList())
+            assertEquals(listOf(1, 32, 256, 256), model.protoShape.toList())
             assertEquals(32, model.maskDim)
-            assertEquals(160, model.protoHeight)
-            assertEquals(160, model.protoWidth)
+            assertEquals(256, model.protoHeight)
+            assertEquals(256, model.protoWidth)
 
             // 4 box values + 1 class score + 32 mask coefficients
             assertEquals(PuzzleModel.FIRST_MASK_CHANNEL + model.maskDim, model.numChannels)
@@ -71,5 +73,31 @@ class PuzzleModelInstrumentedTest {
             photo.recycle()
             model.close()
         }
+    }
+
+    /**
+     * The self-test photo of the model (it keeps a GPU that returns wrong numbers from being used) must show on
+     * this device what the CPU reference shows: 1865 candidates, the best at 0.94 - the same as the model gets
+     * when the real app loads it. Checked here without any tolerance of the model code in between.
+     */
+    @Test
+    fun selfTestPhoto_showsThePilesOfThePhotoOnEveryPath() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val canary = context.assets.open("canary_pile.jpg").use { android.graphics.BitmapFactory.decodeStream(it)!! }
+        for (allowGpu in listOf(true, false)) {
+            val model = PuzzleModel.create(context, allowGpu = allowGpu)
+            try {
+                val pixels = IntArray(model.inputSize * model.inputSize).also { canary.getPixels(it, 0, canary.width, 0, 0, canary.width, canary.height) }
+                val detections = model.run(pixels).detections
+                val scores = PuzzleModel.SCORE_CHANNEL * model.numAnchors
+                val candidates = (0 until model.numAnchors).count { detections[scores + it] >= 0.40f }
+                val gpu = if (model.usesGpu) "GPU" else "CPU"
+                assertTrue("$gpu: $candidates Kandidaten statt etwa 1865", candidates in 1500..2300)
+                if (!allowGpu) assertFalse("ohne GPU-Erlaubnis läuft das Modell auf der CPU", model.usesGpu)
+            } finally {
+                model.close()
+            }
+        }
+        canary.recycle()
     }
 }

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- The app is always dark: so is the window behind the Compose content, otherwise it flashes white on start. -->
-    <style name="Theme.PuzzleCounter" parent="android:Theme.Material.NoActionBar">
+    <!-- The app is always dark: so is the window behind the Compose content, otherwise it flashes white on start.
+         An AppCompat theme, because MainActivity is an AppCompatActivity (per-app language before Android 13). -->
+    <style name="Theme.PuzzleCounter" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@color/window_background</item>
     </style>
 </resources>

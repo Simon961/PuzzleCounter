@@ -1,50 +1,74 @@
 package com.example.puzzlecounter.ui
 
+import androidx.annotation.PluralsRes
+import com.example.puzzlecounter.R
+import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.sqrt
+
 /** How the counted pieces compare to the number the puzzle should have. */
 internal enum class Outcome { COMPLETE, MISSING, TOO_MANY }
 
-/** The texts of the result screen. [hint] explains what may be behind a difference, [estimate] that some pieces were estimated. */
+/**
+ * The texts of the result screen. [hint] explains what may be behind a difference, [estimate] that some pieces were
+ * estimated, [accuracy] that a small difference is within what the count can tell. They are put into words only on
+ * the screen, in the language of the app.
+ */
 internal class ResultTexts(
     val outcome: Outcome,
-    val title: String,
-    val message: String,
-    val hint: String?,
-    val estimate: String?,
+    val title: UiText,
+    val message: UiText,
+    val hint: UiText?,
+    val estimate: UiText?,
+    val accuracy: UiText? = null,
 )
 
 /**
- * The result texts for [counted] pieces where [target] were expected. [estimatedGroups] is the number of places
- * where pieces lay on each other or touched, so that their number was estimated from the area.
+ * By how many pieces the count of [photos] photos may be off although everything was done right. Counting the same
+ * photo turned and mirrored gives results that differ by up to 4 pieces (standard deviation 1.2), and where pieces
+ * lie on each other their number is estimated. Two standard deviations, rounded up, make about 3 for one photo; the
+ * errors of several photos partly cancel, so they add up like the square root of their number.
  */
-internal fun resultTexts(target: Int, counted: Int, estimatedGroups: Int): ResultTexts {
-    val estimate = when {
-        estimatedGroups <= 0 -> null
-        else -> {
-            val places = if (estimatedGroups == 1) "In 1 Gruppe lagen Teile" else "In $estimatedGroups Gruppen lagen Teile"
-            "$places übereinander oder berührten sich – dort ist die Zahl geschätzt. " +
-                "Für ein genaues Ergebnis die Teile mit Abstand auslegen."
-        }
-    }
+internal fun countingTolerance(photos: Int): Int = ceil(2.5 * sqrt(photos.coerceAtLeast(1).toDouble())).toInt()
+
+/**
+ * The result texts for [counted] pieces where [target] were expected, counted in [photos] photos. [estimatedGroups]
+ * is the number of places where pieces lay on each other or touched, so that their number was estimated from the area.
+ */
+internal fun resultTexts(target: Int, counted: Int, estimatedGroups: Int, photos: Int = 1): ResultTexts {
+    val estimate = if (estimatedGroups > 0) UiText.Plural(R.plurals.result_estimate, estimatedGroups) else null
     val difference = target - counted
+    // A difference that small is what the counting itself can be off by: it may be no difference at all.
+    val tolerance = countingTolerance(photos)
+    fun accuracy(@PluralsRes whatMayBeRight: Int): UiText? {
+        if (abs(difference) > tolerance) return null
+        val note = UiText.Plural(whatMayBeRight, tolerance)
+        // the note about estimated groups already advises to spread the pieces out
+        return if (estimate == null) UiText.Joined(listOf(note, UiText.Res(R.string.result_accuracy_advice))) else note
+    }
     return when {
-        difference == 0 -> ResultTexts(Outcome.COMPLETE, "Perfekt!", "Alle Teile sind vorhanden.", null, estimate)
-        difference > 0 -> ResultTexts(
-            outcome = Outcome.MISSING,
-            title = "Achtung!",
-            message = if (difference == 1) "Es fehlt 1 Teil." else "Es fehlen $difference Teile.",
-            hint = "Prüfe, ob alle Teile auf dem Foto liegen: Teile unter anderen Teilen oder außerhalb des Fotos werden nicht erkannt.",
+        difference == 0 -> ResultTexts(
+            outcome = Outcome.COMPLETE,
+            title = UiText.Res(R.string.result_title_complete),
+            message = UiText.Res(R.string.result_message_complete),
+            hint = null,
             estimate = estimate,
         )
-        else -> {
-            val extra = -difference
-            ResultTexts(
-                outcome = Outcome.TOO_MANY,
-                title = "Mehr Teile als erwartet",
-                message = if (extra == 1) "Es wurde 1 Teil mehr gezählt als angegeben." else "Es wurden $extra Teile mehr gezählt als angegeben.",
-                hint = "Mögliche Gründe: Das Puzzle hat mehr Teile als angegeben, es liegen Teile eines anderen Puzzles dabei, " +
-                    "oder Teile wurden doppelt gezählt.",
-                estimate = estimate,
-            )
-        }
+        difference > 0 -> ResultTexts(
+            outcome = Outcome.MISSING,
+            title = UiText.Res(R.string.result_title_missing),
+            message = UiText.Plural(R.plurals.result_message_missing, difference),
+            hint = UiText.Res(R.string.result_hint_missing),
+            estimate = estimate,
+            accuracy = accuracy(R.plurals.result_accuracy_missing),
+        )
+        else -> ResultTexts(
+            outcome = Outcome.TOO_MANY,
+            title = UiText.Res(R.string.result_title_too_many),
+            message = UiText.Plural(R.plurals.result_message_too_many, -difference),
+            hint = UiText.Res(R.string.result_hint_too_many),
+            estimate = estimate,
+            accuracy = accuracy(R.plurals.result_accuracy_too_many),
+        )
     }
 }

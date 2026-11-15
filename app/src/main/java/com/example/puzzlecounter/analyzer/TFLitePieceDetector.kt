@@ -10,6 +10,7 @@ import androidx.core.graphics.createBitmap
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 /** A detection with its mask and contour, before the pieces in it are counted. [rect] is in pixels of the source bitmap. */
 private class Blob(val score: Float, val rect: Rect, val mask: BooleanArray, val contour: PieceContour)
@@ -77,6 +78,7 @@ class TFLitePieceDetector(private val model: PuzzleModel) {
     private fun decodeCandidates(det: FloatArray): List<BBox> {
         val anchors = model.numAnchors
         val size = model.inputSize.toFloat()
+        val minBoxSize = size * MIN_BOX_SHARE
         val boxes = ArrayList<BBox>()
         for (a in 0 until anchors) {
             val score = det[PuzzleModel.SCORE_CHANNEL * anchors + a]
@@ -86,7 +88,7 @@ class TFLitePieceDetector(private val model: PuzzleModel) {
             val cy = det[anchors + a] * size
             val w = det[2 * anchors + a] * size
             val h = det[3 * anchors + a] * size
-            if (w < MIN_BOX_SIZE_PX || h < MIN_BOX_SIZE_PX) continue
+            if (w < minBoxSize || h < minBoxSize) continue
             boxes += BBox(
                 xmin = (cx - w / 2f).coerceIn(0f, size),
                 ymin = (cy - h / 2f).coerceIn(0f, size),
@@ -129,7 +131,10 @@ class TFLitePieceDetector(private val model: PuzzleModel) {
             maskCanvas.drawPath(piece.path, paint.fill)
             maskCanvas.drawPath(piece.path, paint.stroke)
         }
-        return DetectionResult(pieces, maskImage, source.width * source.height)
+        // The area is counted in pixels of the photo, the model sees it letterboxed: both lengths scale with lb.scale.
+        val typicalEdgeShare = PieceCounting.typicalPieceArea(blobs.map { it.contour.area })
+            ?.let { sqrt(it) * lb.scale / model.inputSize }
+        return DetectionResult(pieces, maskImage, source.width * source.height, typicalEdgeShare)
     }
 
     /**
@@ -236,22 +241,32 @@ class TFLitePieceDetector(private val model: PuzzleModel) {
 
     private companion object {
         /**
-         * Detections below this confidence are not counted: they are small visible parts (a fifth to a half of a
-         * piece) of pieces that other pieces cover, and the score cannot tell whether such a part is a piece of its
-         * own. 0.40 keeps the counts of earlier versions; lowering it adds a few such parts per photo, raising it
-         * drops covered pieces that really are there.
+         * Detections below this confidence are not counted. On the four test photos the count stays between 203 and
+         * 207 for every value from 0.20 to 0.70, so 0.40 lies in the middle of a wide plateau. Below it the first
+         * small visible parts (a fifth to a half of a piece) of pieces that other pieces cover get through, and the
+         * score cannot tell whether such a part is a piece of its own; above 0.70 covered pieces that really are
+         * there are lost (0.80: 201 to 203).
          */
         const val CONFIDENCE_THRESHOLD = 0.40f
 
         /**
-         * Overlap above which two boxes are treated as the same piece. The count is stable between 0.40 and 0.45;
-         * from 0.50 on, duplicate detections of one piece get through, below 0.40 neighbours start to get lost.
+         * Overlap above which two boxes are treated as the same piece. The count is the same for every value from
+         * 0.30 to 0.55 (204, 205, 205, 207); from 0.60 on duplicate detections of one piece get through, below 0.30
+         * neighbours start to get lost.
          */
         const val NMS_IOU_THRESHOLD = 0.45f
 
-        /** Minimum box edge in model input pixels. */
-        const val MIN_BOX_SIZE_PX = 6f
-        const val MAX_CANDIDATES = 3000
+        /**
+         * Smallest box edge as a share of the model input (10 px at 1024). Real detections are never that small:
+         * the smallest of the test photos is 1.5 % of the input, the median 4.5 %.
+         */
+        const val MIN_BOX_SHARE = 0.01f
+
+        /**
+         * Upper bounds of the work. The model reports about nine overlapping candidates for every piece (1900 for a
+         * pile of 200), so 8000 candidates are enough for far more pieces than [MAX_DETECTIONS] lets through.
+         */
+        const val MAX_CANDIDATES = 8000
         const val MAX_DETECTIONS = 1000
     }
 }

@@ -1,6 +1,7 @@
 package com.example.puzzlecounter.ui
 
 import android.graphics.BitmapFactory
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -57,14 +58,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.puzzlecounter.R
 import java.io.File
 
-private enum class ImageMode(val label: String) {
-    CONTOURS("Konturen"),
-    MASK("Maske"),
-    ORIGINAL("Original"),
+private enum class ImageMode(@StringRes val labelRes: Int) {
+    CONTOURS(R.string.inspector_mode_contours),
+    MASK(R.string.inspector_mode_mask),
+    ORIGINAL(R.string.inspector_mode_original),
 }
 
 /** Developer inspector: browse the last scans as contour overlay, mask or original photo. */
@@ -82,30 +85,30 @@ fun DeveloperDebugScreen(viewModel: PuzzleViewModel, onBack: () -> Unit) {
     if (askToDelete) {
         AlertDialog(
             onDismissRequest = { askToDelete = false },
-            title = { Text("Alle Scans löschen?") },
-            text = { Text("Die gespeicherten Fotos und Erkennungen der letzten Scans werden von diesem Gerät entfernt. Der Verlauf der Überprüfungen bleibt erhalten.") },
+            title = { Text(stringResource(R.string.inspector_delete_title)) },
+            text = { Text(stringResource(R.string.inspector_delete_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     askToDelete = false
                     viewModel.clearDebugSessions()
-                }) { Text("Löschen", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { askToDelete = false }) { Text("Abbrechen") } }
+            dismissButton = { TextButton(onClick = { askToDelete = false }) { Text(stringResource(R.string.action_cancel)) } }
         )
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Entwickler-Inspektor", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.developer_inspector), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Zurück")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { askToDelete = true }, enabled = sessions.isNotEmpty()) {
-                        Icon(Icons.Rounded.Delete, contentDescription = "Alle Scans löschen", tint = MaterialTheme.colorScheme.error.copy(alpha = if (sessions.isNotEmpty()) 1f else 0.4f))
+                        Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.inspector_delete_all), tint = MaterialTheme.colorScheme.error.copy(alpha = if (sessions.isNotEmpty()) 1f else 0.4f))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -128,7 +131,7 @@ fun DeveloperDebugScreen(viewModel: PuzzleViewModel, onBack: () -> Unit) {
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
                 Spacer(Modifier.height(16.dp))
-                Text("Noch keine Scans gespeichert.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.inspector_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             return@Scaffold
         }
@@ -151,7 +154,7 @@ fun DeveloperDebugScreen(viewModel: PuzzleViewModel, onBack: () -> Unit) {
                             onClick = { imageMode = mode },
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = ImageMode.entries.size)
                         ) {
-                            Text(mode.label)
+                            Text(stringResource(mode.labelRes))
                         }
                     }
                 }
@@ -174,11 +177,11 @@ fun DeveloperDebugScreen(viewModel: PuzzleViewModel, onBack: () -> Unit) {
                 shape = RoundedCornerShape(20.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Messwerte & Metadaten", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.inspector_measurements), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Teile: ${selected.pieceCount}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        Text("Gruppen überlappender Teile: ${selected.clusterCount}", color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.inspector_pieces, selected.pieceCount), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.inspector_overlap_places, selected.clusterCount), color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -224,7 +227,7 @@ private fun ZoomableImage(path: String?, modifier: Modifier = Modifier) {
         if (bitmap != null) {
             Image(
                 bitmap = bitmap,
-                contentDescription = "Gespeicherter Scan",
+                contentDescription = stringResource(R.string.inspector_saved_scan),
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer(
@@ -244,7 +247,7 @@ private fun ZoomableImage(path: String?, modifier: Modifier = Modifier) {
                     modifier = Modifier.size(48.dp)
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("Bild konnte nicht geladen werden.", color = Color.White)
+                Text(stringResource(R.string.inspector_image_failed), color = Color.White)
             }
         }
     }
@@ -282,7 +285,7 @@ private fun SessionThumbnailsRow(
                 if (thumb != null) {
                     Image(
                         bitmap = thumb.asImageBitmap(),
-                        contentDescription = "Scan auswählen",
+                        contentDescription = stringResource(R.string.inspector_select_scan),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )

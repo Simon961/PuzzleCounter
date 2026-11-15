@@ -16,7 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.puzzlecounter.R
 
 /**
  * The function that opens the system photo picker (which needs no permission) and hands the chosen photo to
@@ -41,6 +43,6 @@ fun UploadPhotoButton(
     colors: IconButtonColors = IconButtonDefaults.filledTonalIconButtonColors(),
 ) {
     FilledTonalIconButton(onClick = onClick, modifier = modifier.size(56.dp), colors = colors) {
-        Icon(Icons.Rounded.FileUpload, contentDescription = "Foto hochladen")
+        Icon(Icons.Rounded.FileUpload, contentDescription = stringResource(R.string.upload_photo))
     }
 }

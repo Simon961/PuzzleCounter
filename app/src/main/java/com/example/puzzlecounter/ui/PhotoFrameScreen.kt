@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +31,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +49,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +60,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.puzzlecounter.R
 import com.example.puzzlecounter.analyzer.PuzzleModel
 import kotlin.math.roundToInt
 
@@ -73,17 +78,19 @@ fun PhotoFrameScreen(
     onBack: () -> Unit,
     onDiscard: () -> Unit,
 ) {
-    // However the screen is left, the picked photo is not needed afterwards.
-    DisposableEffect(Unit) { onDispose(onDiscard) }
+    // However the screen is left, the picked photo is not needed afterwards - but turning the phone only rebuilds the
+    // screen: the photo (and the placement the user has made, see PlacementSaver) must survive that.
+    val activity = LocalContext.current.findActivity()
+    DisposableEffect(Unit) { onDispose { if (activity?.isChangingConfigurations != true) onDiscard() } }
 
     AppBackground(uiState = uiState) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Foto ausrichten", fontWeight = FontWeight.Bold) },
+                    title = { Text(stringResource(R.string.frame_title), fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Zurück")
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -99,9 +106,9 @@ fun PhotoFrameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Das Foto konnte nicht geöffnet werden.", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground)
+                    Text(stringResource(R.string.frame_open_failed), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(Modifier.height(24.dp))
-                    Button(onClick = onBack, shape = RoundedCornerShape(50)) { Text("Zurück") }
+                    Button(onClick = onBack, shape = RoundedCornerShape(50)) { Text(stringResource(R.string.action_back)) }
                 }
                 PickedPhoto.Loading -> Column(
                     modifier = content,
@@ -110,7 +117,9 @@ fun PhotoFrameScreen(
                 ) {
                     CircularProgressIndicator()
                 }
-                PickedPhoto.None -> Unit
+                // No photo although the screen is shown: the app was restarted by the system in the meantime and the
+                // picked photo is gone with it. There is nothing to place any more, so the screen is left.
+                PickedPhoto.None -> LaunchedEffect(Unit) { onBack() }
             }
         }
     }
@@ -136,8 +145,7 @@ private fun FrameEditor(photo: Bitmap, onConfirm: (PhotoRegion) -> Unit, modifie
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(
-                text = "Verschiebe das Foto und zoome mit zwei Fingern, bis alle Puzzleteile im Quadrat liegen. " +
-                    "Gezählt wird nur, was im Quadrat zu sehen ist.",
+                text = stringResource(R.string.frame_instructions),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
@@ -146,13 +154,14 @@ private fun FrameEditor(photo: Bitmap, onConfirm: (PhotoRegion) -> Unit, modifie
         }
         Spacer(Modifier.height(16.dp))
 
+        val squareDescription = stringResource(R.string.frame_square_description)
         BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val side = minOf(maxWidth, maxHeight)
             Canvas(
                 modifier = Modifier
                     .size(side)
                     .clipToBounds()
-                    .semantics { contentDescription = "Quadrat: Foto verschieben und zoomen" }
+                    .semantics { contentDescription = squareDescription }
                     .pointerInput(frame) {
                         detectTransformGestures { centroid, pan, zoom, _ ->
                             val sidePx = size.width.toFloat()
@@ -204,12 +213,12 @@ private fun FrameEditor(photo: Bitmap, onConfirm: (PhotoRegion) -> Unit, modifie
                 onConfirm(frame.regionAt(placement))
             },
             enabled = !confirmed,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
             shape = RoundedCornerShape(50)
         ) {
             Icon(Icons.Rounded.Check, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Bestätigen", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.action_confirm), fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

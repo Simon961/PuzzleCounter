@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.core.content.edit
 
 data class PuzzleHistoryEntry(
+    /** Kept in the stored format only; the screen names an entry by its [target] in the language of the app. */
     val name: String,
     val date: Long,
     val target: Int,

@@ -6,9 +6,11 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.graphics.scale
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.puzzlecounter.analyzer.DetectionResult
 import com.example.puzzlecounter.analyzer.ImageQualityChecker
+import com.example.puzzlecounter.analyzer.PhotoIssue
 import com.example.puzzlecounter.analyzer.PuzzleModel
 import com.example.puzzlecounter.analyzer.QualityResult
 import com.example.puzzlecounter.analyzer.TFLitePieceDetector
@@ -25,8 +27,18 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 
-class PuzzleViewModel(application: Application) : AndroidViewModel(application) {
+/**
+ * The state of the app. What a check in progress consists of (the size of the puzzle, the piles counted so far) is
+ * also kept in [savedState]: Android may end the process of an app that is in the background - while the user lays
+ * out the pieces of the next pile, for example - and the check must then go on where it was, not start over or, worse,
+ * finish with an empty state.
+ */
+class PuzzleViewModel @JvmOverloads constructor(
+    application: Application,
+    private val savedState: SavedStateHandle = SavedStateHandle(),
+) : AndroidViewModel(application) {
     private val historyManager = HistoryManager(application)
     private val debugManager = DebugManager(application)
     private val settingsManager = SettingsManager(application)
@@ -36,7 +48,7 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
     private val modelDispatcher = modelExecutor.asCoroutineDispatcher()
     private var model: PuzzleModel? = null // only touched on modelDispatcher
 
-    private val _uiState = MutableStateFlow(newSessionState())
+    private val _uiState = MutableStateFlow(restoredSessionState())
     val uiState: StateFlow<PuzzleUiState> = _uiState.asStateFlow()
 
     /** A state without any scan progress; settings, history and debug sessions are loaded from storage. */
@@ -46,6 +58,27 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         history = historyManager.getHistory(),
         debugSessions = debugManager.getSessions()
     )
+
+    /** The state at the start: the check that was in progress when the system ended the process, if there was one. */
+    private fun restoredSessionState(): PuzzleUiState {
+        val target = savedState.get<Int>(KEY_TARGET)?.takeIf { it > 0 } ?: return newSessionState()
+        return newSessionState().copy(
+            targetPieceCount = target,
+            calculatedPiles = savedState.get<Int>(KEY_PILES) ?: 1,
+            currentPileIndex = savedState.get<Int>(KEY_PILE) ?: 1,
+            countedPieces = savedState.get<Int>(KEY_COUNTED_PIECES) ?: 0,
+            countedClusters = savedState.get<Int>(KEY_COUNTED_CLUSTERS) ?: 0,
+        )
+    }
+
+    /** Keeps the check in progress where the system can give it back after it ended the process. */
+    private fun keepCheck(state: PuzzleUiState) {
+        savedState[KEY_TARGET] = state.targetPieceCount
+        savedState[KEY_PILES] = state.calculatedPiles
+        savedState[KEY_PILE] = state.currentPileIndex
+        savedState[KEY_COUNTED_PIECES] = state.countedPieces
+        savedState[KEY_COUNTED_CLUSTERS] = state.countedClusters
+    }
 
     fun updateBackgroundId(id: Int) {
         settingsManager.setBackgroundId(id)
@@ -57,10 +90,26 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         _uiState.update { it.copy(backgroundBrightness = brightness) }
     }
 
+    /**
+     * Loads the model in the background, so that the first photo does not have to wait for it (loading takes seconds,
+     * see [PuzzleModel.create]). A model that cannot be loaded is reported when a photo is analysed.
+     */
+    fun preloadModel() {
+        viewModelScope.launch(modelDispatcher) {
+            try {
+                loadedModel()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Modell konnte nicht vorab geladen werden", e)
+            }
+        }
+    }
+
     /** Starts a new puzzle check; progress of a previous one is discarded. */
     fun setTargetPieceCount(count: Int) {
         val piles = ceil(count / PIECES_PER_PILE.toDouble()).toInt().coerceAtLeast(1)
-        _uiState.value = newSessionState().copy(targetPieceCount = count, calculatedPiles = piles)
+        _uiState.value = newSessionState().copy(targetPieceCount = count, calculatedPiles = piles).also(::keepCheck)
     }
 
     /**
@@ -93,11 +142,14 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
      */
     fun onPickedPhotoFramed(region: PhotoRegion) {
         val photo = (_uiState.value.pickedPhoto as? PickedPhoto.Ready)?.bitmap ?: return
-        analyzePhoto(fromGallery = true) { cropSquare(photo, region, MAX_PROCESSING_DIMENSION.toInt()) }
+        analyzePhoto(fromGallery = true) { modelSize -> cropSquare(photo, region, modelSize) }
     }
 
-    /** Shows the analysis of the square photo that [photo] delivers (called on the model thread); recycles it. */
-    private fun analyzePhoto(fromGallery: Boolean, photo: () -> Bitmap) {
+    /**
+     * Shows the analysis of the square photo that [photo] delivers; recycles it. [photo] runs on the model thread and
+     * is told the edge length of the model input, which is the size the photo is wanted in.
+     */
+    private fun analyzePhoto(fromGallery: Boolean, photo: (modelSize: Int) -> Bitmap) {
         _uiState.update {
             it.copy(isAnalyzing = true, isReviewingCurrentPhoto = true, currentQualityResult = null, currentPhotoFromGallery = fromGallery)
         }
@@ -107,10 +159,11 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
             var scaled: Bitmap? = null
             var detection: DetectionResult? = null
             try {
-                bitmap = photo()
-                scaled = scaleDown(bitmap)
-                val result = analyze(scaled).also { detection = it }
-                val quality = ImageQualityChecker().checkQuality(scaled, result.hasHugeStacks)
+                val loaded = loadedModel()
+                bitmap = photo(loaded.inputSize)
+                scaled = scaleDown(bitmap, loaded.inputSize)
+                val result = detect(scaled).also { detection = it }
+                val quality = ImageQualityChecker().checkQuality(scaled, result.hasHugeStacks, result.typicalPieceEdgeShare)
                 val session = debugManager.saveSession(scaled, result)
                 val sessions = debugManager.getSessions()
 
@@ -127,9 +180,15 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
                 }
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: ModelUnavailable) {
+                Log.e(TAG, "Das Modell konnte nicht geladen werden", e)
+                _uiState.update { it.copy(isAnalyzing = false, currentQualityResult = MODEL_UNAVAILABLE) }
             } catch (e: Exception) {
                 Log.e(TAG, "Analyse fehlgeschlagen", e)
                 _uiState.update { it.copy(isAnalyzing = false, currentQualityResult = ANALYSIS_FAILED) }
+            } catch (e: OutOfMemoryError) {
+                Log.e(TAG, "Zu wenig Speicher für die Analyse", e)
+                _uiState.update { it.copy(isAnalyzing = false, currentQualityResult = OUT_OF_MEMORY) }
             } finally {
                 // Critical memory release
                 // recycle() is safe to call twice (scaled is the original if the photo was small enough)
@@ -140,17 +199,39 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    /** Shrinks the camera photo to at most [MAX_PROCESSING_DIMENSION] pixels per edge. */
-    private fun scaleDown(bitmap: Bitmap): Bitmap {
-        val scale = minOf(MAX_PROCESSING_DIMENSION / bitmap.width, MAX_PROCESSING_DIMENSION / bitmap.height)
+    /**
+     * Shrinks the photo to the model input of [size] pixels per edge in one step, so that the detector does not have
+     * to resample it again (a photo that is not larger is kept as it is).
+     */
+    private fun scaleDown(bitmap: Bitmap, size: Int): Bitmap {
+        val scale = minOf(size.toFloat() / bitmap.width, size.toFloat() / bitmap.height)
         if (scale >= 1f) return bitmap
-        return bitmap.scale((bitmap.width * scale).toInt(), (bitmap.height * scale).toInt())
+        return bitmap.scale((bitmap.width * scale).roundToInt(), (bitmap.height * scale).roundToInt())
     }
 
-    /** Runs the detector, loading the model on first use. Must be called on [modelDispatcher]. */
-    private fun analyze(bitmap: Bitmap): DetectionResult {
-        val loaded = model ?: PuzzleModel.create(getApplication()).also { model = it }
-        return TFLitePieceDetector(loaded).detectPieces(bitmap)
+    /** The model, loaded on first use. Must be called on [modelDispatcher]. */
+    private fun loadedModel(): PuzzleModel = model ?: createModel(allowGpu = true)
+
+    private fun createModel(allowGpu: Boolean): PuzzleModel = try {
+        PuzzleModel.create(getApplication(), allowGpu).also { model = it }
+    } catch (e: Exception) {
+        throw ModelUnavailable(e)
+    }
+
+    /**
+     * Counts the pieces in [photo]. If the model fails while it runs - a GPU can get lost while the app rests in the
+     * background - it is loaded again, this time for the CPU that cannot get lost, and the photo is analysed once more.
+     */
+    private fun detect(photo: Bitmap): DetectionResult {
+        val current = loadedModel()
+        return try {
+            TFLitePieceDetector(current).detectPieces(photo)
+        } catch (e: Exception) {
+            Log.w(TAG, "Erkennung fehlgeschlagen, das Modell wird für die CPU neu geladen", e)
+            model = null
+            runCatching { current.close() }
+            TFLitePieceDetector(createModel(allowGpu = false)).detectPieces(photo)
+        }
     }
 
     fun retakePhoto() {
@@ -187,6 +268,7 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
                 currentPhotoFromGallery = false
             )
         }
+        keepCheck(_uiState.value)
 
         if (nextPileIndex > state.calculatedPiles) {
             saveResultToHistory(countedPieces, state.targetPieceCount)
@@ -196,7 +278,8 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
     private fun saveResultToHistory(actual: Int, target: Int) {
         historyManager.saveHistory(
             PuzzleHistoryEntry(
-                name = "Puzzle $target Teile",
+                // Not shown: the title of an entry is made from its target in the language of the app.
+                name = "Puzzle $target",
                 date = System.currentTimeMillis(),
                 target = target,
                 actual = actual
@@ -213,6 +296,7 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
 
     fun reset() {
         _uiState.value = newSessionState()
+        savedState.keys().toList().forEach { savedState.remove<Any>(it) }
     }
 
     override fun onCleared() {
@@ -233,11 +317,23 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         /** Pieces per photo: bigger puzzles are split into several piles of about this size. */
         const val PIECES_PER_PILE = 200
 
-        /** Photos are shrunk to this edge length before the analysis. */
-        private const val MAX_PROCESSING_DIMENSION = 1080f
-
         private const val TAG = "PuzzleViewModel"
 
-        private val ANALYSIS_FAILED = QualityResult("Die Analyse ist fehlgeschlagen. Bitte versuche es mit einem neuen Foto noch einmal.")
+        // Keys of the check in progress in the saved state.
+        private const val KEY_TARGET = "target"
+        private const val KEY_PILES = "piles"
+        private const val KEY_PILE = "pile"
+        private const val KEY_COUNTED_PIECES = "countedPieces"
+        private const val KEY_COUNTED_CLUSTERS = "countedClusters"
+
+        private val ANALYSIS_FAILED = QualityResult(PhotoIssue.ANALYSIS_FAILED)
+
+        /** The model itself cannot run: retaking the photo does not help, so the text names what might. */
+        private val MODEL_UNAVAILABLE = QualityResult(PhotoIssue.MODEL_UNAVAILABLE)
+
+        private val OUT_OF_MEMORY = QualityResult(PhotoIssue.OUT_OF_MEMORY)
     }
+
+    /** The model could not be loaded (as opposed to a photo that could not be analysed). */
+    private class ModelUnavailable(cause: Throwable) : Exception(cause)
 }

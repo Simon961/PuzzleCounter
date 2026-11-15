@@ -2,10 +2,12 @@ package com.example.puzzlecounter.ui
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.util.Size
@@ -62,6 +64,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -69,10 +73,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.puzzlecounter.R
+import com.example.puzzlecounter.analyzer.PhotoIssue
 import java.util.concurrent.Executors
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 
 private const val TAG = "CaptureScreen"
 
@@ -93,12 +104,28 @@ fun CaptureScreen(
 ) {
     val context = LocalContext.current
 
-    var hasCameraPermission by remember {
-        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
-    }
+    var hasCameraPermission by remember { mutableStateOf(isCameraPermissionGranted(context)) }
+    // Denied for good: Android shows no dialog any more, the permission can only be given in the settings of the app.
+    var needsSettings by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         hasCameraPermission = isGranted
+        val activity = context.findActivity()
+        needsSettings = !isGranted && activity != null &&
+            !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
+    }
+
+    // The permission may have been given in the settings while the app was away.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasCameraPermission = isCameraPermissionGranted(context)
+                if (hasCameraPermission) needsSettings = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     // Only the live view needs the camera: a photo from the gallery is reviewed without asking for it.
@@ -113,15 +140,31 @@ fun CaptureScreen(
         uiState.isReviewingCurrentPhoto -> PhotoReview(uiState, onRetake, onConfirm, onPickPhoto)
         !hasCameraPermission -> CameraPermissionRequest(
             uiState,
+            needsSettings = needsSettings,
             onRequest = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+            onOpenSettings = {
+                context.startActivity(
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            },
             onPickPhoto = onPickPhoto
         )
         else -> LiveCamera(uiState, onPhotoCaptured, onPickPhoto)
     }
 }
 
+private fun isCameraPermissionGranted(context: Context) =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+
 @Composable
-private fun CameraPermissionRequest(uiState: PuzzleUiState, onRequest: () -> Unit, onPickPhoto: (Uri) -> Unit) {
+private fun CameraPermissionRequest(
+    uiState: PuzzleUiState,
+    needsSettings: Boolean,
+    onRequest: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onPickPhoto: (Uri) -> Unit,
+) {
     val openPhotoPicker = rememberPhotoPicker(onPickPhoto)
     AppBackground(uiState = uiState) {
         Column(
@@ -134,19 +177,19 @@ private fun CameraPermissionRequest(uiState: PuzzleUiState, onRequest: () -> Uni
             Icon(Icons.Rounded.NoPhotography, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onBackground)
             Spacer(Modifier.height(24.dp))
             Text(
-                "Zum Fotografieren der Puzzleteile braucht die App Zugriff auf die Kamera.",
+                stringResource(if (needsSettings) R.string.camera_permission_denied else R.string.camera_permission_needed),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(Modifier.height(24.dp))
-            Button(onClick = onRequest, shape = RoundedCornerShape(50)) {
-                Text("Berechtigung erteilen")
+            Button(onClick = if (needsSettings) onOpenSettings else onRequest, shape = RoundedCornerShape(50)) {
+                Text(stringResource(if (needsSettings) R.string.camera_permission_open_settings else R.string.camera_permission_grant))
             }
             Spacer(Modifier.height(12.dp))
             OutlinedButton(onClick = openPhotoPicker, shape = RoundedCornerShape(50)) {
                 Icon(Icons.Rounded.FileUpload, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Stattdessen Foto hochladen")
+                Text(stringResource(R.string.upload_photo_instead))
             }
         }
     }
@@ -174,7 +217,7 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
         if (bitmap != null) {
             Image(
                 bitmap = bitmap,
-                contentDescription = "Analysiertes Foto",
+                contentDescription = stringResource(R.string.review_photo_description),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )
@@ -194,7 +237,11 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 4.dp, modifier = Modifier.size(56.dp))
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        if (uiState.calculatedPiles > 1) "Analysiere Haufen ${uiState.currentPileIndex} von ${uiState.calculatedPiles} …" else "Analysiere das Foto …",
+                        if (uiState.calculatedPiles > 1) {
+                            stringResource(R.string.analyzing_pile, uiState.currentPileIndex, uiState.calculatedPiles)
+                        } else {
+                            stringResource(R.string.analyzing_photo)
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         fontWeight = FontWeight.Bold
@@ -214,7 +261,7 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                 ) {
                     if (quality.isAcceptable) {
                         Surface(
-                            modifier = Modifier.padding(top = 48.dp, start = 16.dp, end = 16.dp),
+                            modifier = Modifier.statusBarsPadding().padding(top = 16.dp, start = 16.dp, end = 16.dp),
                             color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.95f),
                             shape = RoundedCornerShape(20.dp),
                             tonalElevation = 8.dp
@@ -224,14 +271,14 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                                 Spacer(Modifier.width(12.dp))
                                 Column {
                                     Text(
-                                        text = "${uiState.currentPieces} Teile",
+                                        text = pluralStringResource(R.plurals.pieces_count, uiState.currentPieces, uiState.currentPieces),
                                         color = MaterialTheme.colorScheme.onSecondary,
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                     if (uiState.currentClusters > 0) {
                                         Text(
-                                            text = "${uiState.currentClusters} Stellen mit überlappenden Teilen – dort geschätzt",
+                                            text = pluralStringResource(R.plurals.review_estimated_places, uiState.currentClusters, uiState.currentClusters),
                                             color = MaterialTheme.colorScheme.onSecondary,
                                             style = MaterialTheme.typography.bodySmall
                                         )
@@ -241,7 +288,7 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                         }
                     } else {
                         Surface(
-                            modifier = Modifier.padding(top = 48.dp, start = 16.dp, end = 16.dp),
+                            modifier = Modifier.statusBarsPadding().padding(top = 16.dp, start = 16.dp, end = 16.dp),
                             color = MaterialTheme.colorScheme.error.copy(alpha = 0.95f),
                             shape = RoundedCornerShape(20.dp),
                             tonalElevation = 8.dp
@@ -250,7 +297,7 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                                 Icon(Icons.Rounded.Error, contentDescription = null, tint = MaterialTheme.colorScheme.onError)
                                 Spacer(Modifier.width(12.dp))
                                 Text(
-                                    text = quality.warningMessage ?: "Fehler.",
+                                    text = stringResource((quality.issue ?: PhotoIssue.ANALYSIS_FAILED).messageRes),
                                     color = MaterialTheme.colorScheme.onError,
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.titleSmall
@@ -267,7 +314,7 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
                     Column(
-                        modifier = Modifier.padding(bottom = 48.dp, start = 24.dp, end = 24.dp).fillMaxWidth(),
+                        modifier = Modifier.navigationBarsPadding().padding(bottom = 24.dp, start = 24.dp, end = 24.dp).fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         if (quality.isAcceptable) {
@@ -276,12 +323,12 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     onConfirm()
                                 },
-                                modifier = Modifier.fillMaxWidth().height(64.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
                                 shape = RoundedCornerShape(50)
                             ) {
                                 Icon(Icons.Rounded.Check, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text("Bestätigen & Weiter", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.action_confirm_continue), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                             OutlinedButton(
@@ -289,14 +336,14 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     another()
                                 },
-                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                                 shape = RoundedCornerShape(50),
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
                             ) {
                                 Icon(if (fromGallery) Icons.Rounded.FileUpload else Icons.Rounded.Refresh, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text(if (fromGallery) "Anderes Foto wählen" else "Neu aufnehmen")
+                                Text(stringResource(if (fromGallery) R.string.action_choose_other_photo else R.string.action_retake))
                             }
                         } else {
                             Button(
@@ -304,14 +351,14 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     another()
                                 },
-                                modifier = Modifier.fillMaxWidth().height(64.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
                                 shape = RoundedCornerShape(50),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                             ) {
                                 Icon(if (fromGallery) Icons.Rounded.FileUpload else Icons.Rounded.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.onError)
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    if (fromGallery) "Anderes Foto wählen (empfohlen)" else "Neu aufnehmen (empfohlen)",
+                                    stringResource(if (fromGallery) R.string.action_choose_other_photo_recommended else R.string.action_retake_recommended),
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onError
@@ -326,7 +373,7 @@ private fun PhotoReview(uiState: PuzzleUiState, onRetake: () -> Unit, onConfirm:
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Trotzdem fortfahren", color = Color.White.copy(alpha = 0.7f))
+                                    Text(stringResource(R.string.action_continue_anyway), color = Color.White.copy(alpha = 0.7f))
                                 }
                             }
                         }
@@ -351,6 +398,13 @@ private fun LiveCamera(uiState: PuzzleUiState, onPhotoCaptured: (Bitmap) -> Unit
     var isTorchOn by remember { mutableStateOf(false) }
     var isFlashing by remember { mutableStateOf(false) }
     var isCapturing by remember { mutableStateOf(false) }
+    var captureFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(captureFailed) {
+        if (captureFailed) {
+            delay(4.seconds)
+            captureFailed = false
+        }
+    }
 
     // The photo is cut out and rotated off the main thread.
     val captureExecutor = remember { Executors.newSingleThreadExecutor() }
@@ -391,17 +445,21 @@ private fun LiveCamera(uiState: PuzzleUiState, onPhotoCaptured: (Bitmap) -> Unit
                     } catch (e: Exception) {
                         Log.e(TAG, "Foto konnte nicht verarbeitet werden", e)
                         null
+                    } catch (e: OutOfMemoryError) {
+                        Log.e(TAG, "Zu wenig Speicher für das Foto", e)
+                        null
                     } finally {
                         image.close()
                     }
                     isFlashing = false
-                    if (photo != null) onPhotoCaptured(photo)
+                    if (photo != null) onPhotoCaptured(photo) else captureFailed = true
                     isCapturing = false
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     Log.e(TAG, "Aufnahme fehlgeschlagen", exception)
                     isFlashing = false
+                    captureFailed = true
                     isCapturing = false
                 }
             },
@@ -458,10 +516,17 @@ private fun LiveCamera(uiState: PuzzleUiState, onPhotoCaptured: (Bitmap) -> Unit
 
             if (cameraFailed) {
                 Text(
-                    text = "Die Kamera konnte nicht gestartet werden.",
+                    text = stringResource(R.string.camera_failed),
                     color = Color.White,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center).padding(24.dp),
+                )
+            } else if (captureFailed) {
+                Text(
+                    text = stringResource(R.string.capture_failed),
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center).background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp)).padding(16.dp),
                 )
             }
         }
@@ -476,7 +541,7 @@ private fun LiveCamera(uiState: PuzzleUiState, onPhotoCaptured: (Bitmap) -> Unit
 
         // Top Info HUD
         Row(
-            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 48.dp, start = 24.dp, end = 24.dp),
+            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(top = 16.dp, start = 24.dp, end = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -486,7 +551,11 @@ private fun LiveCamera(uiState: PuzzleUiState, onPhotoCaptured: (Bitmap) -> Unit
                 modifier = Modifier.weight(1f),
             ) {
                 Text(
-                    text = if (uiState.calculatedPiles > 1) "Haufen ${uiState.currentPileIndex} / ${uiState.calculatedPiles}" else "Alle Teile in einem Foto",
+                    text = if (uiState.calculatedPiles > 1) {
+                        stringResource(R.string.capture_pile_progress, uiState.currentPileIndex, uiState.calculatedPiles)
+                    } else {
+                        stringResource(R.string.capture_single_photo)
+                    },
                     color = Color.White,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     fontWeight = FontWeight.Bold,
@@ -506,7 +575,7 @@ private fun LiveCamera(uiState: PuzzleUiState, onPhotoCaptured: (Bitmap) -> Unit
                 ) {
                     Icon(
                         imageVector = if (isTorchOn) Icons.Rounded.FlashlightOn else Icons.Rounded.FlashlightOff,
-                        contentDescription = if (isTorchOn) "Taschenlampe ausschalten" else "Taschenlampe einschalten",
+                        contentDescription = stringResource(if (isTorchOn) R.string.torch_off else R.string.torch_on),
                         tint = Color.White,
                     )
                 }
@@ -514,16 +583,18 @@ private fun LiveCamera(uiState: PuzzleUiState, onPhotoCaptured: (Bitmap) -> Unit
         }
 
         // Shutter Button (only once the camera is bound; one photo at a time)
+        val takePhotoDescription = stringResource(R.string.take_photo)
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 64.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 40.dp)
                 .size(80.dp)
                 .border(4.dp, Color.White, CircleShape)
                 .padding(8.dp)
                 .background(Color.White, CircleShape)
                 .alpha(if (shutterEnabled) 1f else 0.4f)
-                .semantics { contentDescription = "Foto aufnehmen" }
+                .semantics { contentDescription = takePhotoDescription }
                 .clickable(enabled = shutterEnabled) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     takePhoto()
@@ -536,7 +607,7 @@ private fun LiveCamera(uiState: PuzzleUiState, onPhotoCaptured: (Bitmap) -> Unit
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 openPhotoPicker()
             },
-            modifier = Modifier.align(Alignment.BottomStart).padding(start = 40.dp, bottom = 76.dp),
+            modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 40.dp, bottom = 52.dp),
             colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = Color.Black.copy(alpha = 0.5f), contentColor = Color.White),
         )
     }
@@ -554,7 +625,7 @@ private fun newPreviewView(context: Context) = PreviewView(context).apply {
 
 /**
  * Photos only need to be as sharp as the analysis: the largest supported 4:3 size up to 2048 x 1536 (~3 MP) is plenty
- * for the 1080 px working image and keeps the memory use small on every phone (some sensors deliver 50-200 MP).
+ * for the 1024 px working image and keeps the memory use small on every phone (some sensors deliver 50-200 MP).
  * Only if a phone offers nothing that small, the next larger size is used.
  */
 private fun newImageCapture() = ImageCapture.Builder()
@@ -583,6 +654,10 @@ private fun bindSquareCamera(
         .addUseCase(preview)
         .addUseCase(imageCapture)
         .build()
+    // Almost every phone has a back camera, but not every tablet or notebook: any camera is better than none.
+    val selector = listOf(CameraSelector.DEFAULT_BACK_CAMERA, CameraSelector.DEFAULT_FRONT_CAMERA)
+        .firstOrNull { provider.hasCamera(it) }
+        ?: throw IllegalStateException("Dieses Gerät hat keine Kamera")
     provider.unbindAll()
-    return provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, useCases)
+    return provider.bindToLifecycle(lifecycleOwner, selector, useCases)
 }

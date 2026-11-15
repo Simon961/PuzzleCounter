@@ -57,30 +57,45 @@ class ImageQualityCheckerInstrumentedTest {
 
     @Test
     fun darkPhoto_isRejected() = scaledBrightness(0.2f).use {
-        assertEquals("Zu dunkel! Bitte für mehr Licht sorgen.", checker.checkQuality(it, hasHugeStacks = false).warningMessage)
+        assertEquals(PhotoIssue.TOO_DARK, checker.checkQuality(it, hasHugeStacks = false).issue)
     }
 
     @Test
     fun overexposedPhoto_isRejected() = scaledBrightness(2.0f).use {
-        assertEquals("Überbelichtet! Blendendes Licht vermeiden.", checker.checkQuality(it, hasHugeStacks = false).warningMessage)
+        assertEquals(PhotoIssue.OVEREXPOSED, checker.checkQuality(it, hasHugeStacks = false).issue)
     }
 
     @Test
     fun blurryPhoto_isRejected() = blurred().use {
-        assertEquals("Foto ist unscharf! Bitte mit ruhiger Hand neu aufnehmen oder ein schärferes Foto wählen.", checker.checkQuality(it, hasHugeStacks = false).warningMessage)
+        assertEquals(PhotoIssue.BLURRY, checker.checkQuality(it, hasHugeStacks = false).issue)
     }
 
     @Test
     fun stackedPieces_areReportedOnASharpPhoto() {
-        assertEquals(
-            "Teile liegen übereinander! Bitte flach nebeneinander ausbreiten.",
-            checker.checkQuality(photo, hasHugeStacks = true).warningMessage
-        )
+        assertEquals(PhotoIssue.STACKED_PIECES, checker.checkQuality(photo, hasHugeStacks = true).issue)
     }
 
     @Test
     fun lightAndSharpness_comeBeforeStacks() = blurred().use {
         // a blurry photo merges pieces into blobs: the cause (blur) is reported, not the symptom (stacks)
-        assertEquals("Foto ist unscharf! Bitte mit ruhiger Hand neu aufnehmen oder ein schärferes Foto wählen.", checker.checkQuality(it, hasHugeStacks = true).warningMessage)
+        assertEquals(PhotoIssue.BLURRY, checker.checkQuality(it, hasHugeStacks = true).issue)
+    }
+
+    @Test
+    fun tooSmallPieces_areReported_butNotWhenTheyAreBigEnough() {
+        assertEquals(PhotoIssue.PIECES_TOO_SMALL, checker.checkQuality(photo, hasHugeStacks = false, pieceEdgeShare = 0.015f).issue)
+        // a pile of 200 pieces that fills the photo: 4 % of the model input
+        assertTrue(checker.checkQuality(photo, hasHugeStacks = false, pieceEdgeShare = 0.039f).isAcceptable)
+        // not known (too few pieces to tell): no judgement
+        assertTrue(checker.checkQuality(photo, hasHugeStacks = false, pieceEdgeShare = null).isAcceptable)
+    }
+
+    @Test
+    fun smallPieces_comeBeforeStacks_andAfterLightAndSharpness() {
+        // distant pieces make the detector merge pieces into blobs: the cause is reported, not the symptom
+        assertEquals(PhotoIssue.PIECES_TOO_SMALL, checker.checkQuality(photo, hasHugeStacks = true, pieceEdgeShare = 0.015f).issue)
+        blurred().use {
+            assertEquals(PhotoIssue.BLURRY, checker.checkQuality(it, hasHugeStacks = true, pieceEdgeShare = 0.015f).issue)
+        }
     }
 }

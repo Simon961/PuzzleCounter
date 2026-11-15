@@ -23,6 +23,11 @@ class DetectionResult(
     /** All contours drawn on black (debug image). */
     val maskImage: Bitmap,
     imageArea: Int,
+    /**
+     * How big a typical piece is in the photo: the edge of a square of the typical piece's area, as a share of the
+     * model input (the size at which the model sees the piece); null if there were too few blobs to tell.
+     */
+    val typicalPieceEdgeShare: Float? = null,
 ) {
     /** The number of pieces in the photo. */
     val pieceCount = pieces.sumOf { it.pieceCount }

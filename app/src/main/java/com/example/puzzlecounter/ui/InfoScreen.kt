@@ -15,31 +15,37 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
+import com.example.puzzlecounter.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoScreen(uiState: PuzzleUiState, onBack: () -> Unit) {
     val context = LocalContext.current
-    val versionName = remember {
+    val packageInfo = remember {
         try {
-            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            "Version ${pInfo.versionName} (Build ${PackageInfoCompat.getLongVersionCode(pInfo)})"
+            context.packageManager.getPackageInfo(context.packageName, 0)
         } catch (_: PackageManager.NameNotFoundException) {
-            "Version unbekannt"
+            null
         }
+    }
+    val versionName = if (packageInfo != null) {
+        stringResource(R.string.info_version, packageInfo.versionName.orEmpty(), PackageInfoCompat.getLongVersionCode(packageInfo))
+    } else {
+        stringResource(R.string.info_version_unknown)
     }
 
     AppBackground(uiState = uiState) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Über PuzzleCounter", fontWeight = FontWeight.Bold) },
+                    title = { Text(stringResource(R.string.info_title), fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Zurück")
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -78,7 +84,7 @@ fun InfoScreen(uiState: PuzzleUiState, onBack: () -> Unit) {
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            text = "PuzzleCounter",
+                            text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -108,16 +114,14 @@ fun InfoScreen(uiState: PuzzleUiState, onBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
                         Text(
-                            text = "Kamera, Fotos & Datenschutz",
+                            text = stringResource(R.string.info_privacy_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "PuzzleCounter nutzt die Kamera (oder ein Foto, das du aus der Galerie auswählst) ausschließlich, um Puzzleteile zu erkennen und zu zählen. " +
-                                "Die Fotos werden direkt auf deinem Gerät mit einem integrierten TensorFlow-Lite-Modell analysiert und zu keinem Zeitpunkt auf Server, in Clouds oder an Dritte übertragen. " +
-                                "Die zuletzt analysierten Fotos bleiben nur auf deinem Gerät gespeichert; du kannst sie im Entwickler-Inspektor ansehen und löschen.",
+                            text = stringResource(R.string.info_privacy_text),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -134,14 +138,14 @@ fun InfoScreen(uiState: PuzzleUiState, onBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
                         Text(
-                            text = "Entwickler",
+                            text = stringResource(R.string.info_developer_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "Entwickelt als privates Projekt zur Erfassung von Puzzleteilen.",
+                            text = stringResource(R.string.info_developer_text),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -158,14 +162,14 @@ fun InfoScreen(uiState: PuzzleUiState, onBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
                         Text(
-                            text = "Open Source & Bibliotheken",
+                            text = stringResource(R.string.info_open_source_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "Diese App basiert auf Open-Source-Technologien wie Jetpack Compose, CameraX und TensorFlow Lite.",
+                            text = stringResource(R.string.info_open_source_text),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

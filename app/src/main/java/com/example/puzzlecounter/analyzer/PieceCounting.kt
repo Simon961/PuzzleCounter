@@ -26,11 +26,12 @@ internal class BlobMask(
  * The model often also reports a piece inside such a blob on its own: blobs whose masks mostly lie on top of each
  * other are one group and are counted by the area they cover together, otherwise that piece would count twice.
  *
- * The constants come from four photos of one pile of about 200 pieces (1080 x 1080 px, pieces of about 2000 px²),
- * checked blob by blob against the photos: single pieces vary around the median area by about 13 % (standard
- * deviation) and reach 1.34 times the median at most, while every blob from 1.35 times on held two or more pieces
- * (two overlapping pieces mostly cover 1.4 to 1.6 times, three about 1.7 to 2.2, four about 2.3). The masks of
- * separate pieces that merely touch overlap by at most 21 % of the smaller one; the blobs inside a cluster by 34 to 93 %.
+ * The constants come from four photos of one pile of about 200 pieces (1080 x 1080 px, analysed at the 1024 px of
+ * the model, where a piece covers about 1500 to 1750 px²), checked blob by blob against the photos: single pieces
+ * vary around the median area by about 16 % (standard deviation) and reach 1.34 times the median at most, while
+ * every blob from 1.35 times on held two or more pieces (two overlapping pieces cover 1.35 to 1.6 times, the four in
+ * one cluster 2.2 times). The masks of separate pieces that merely touch overlap by at most 23 % of the smaller one;
+ * the blobs inside a cluster by 44 to 88 %.
  */
 internal object PieceCounting {
 
@@ -91,6 +92,16 @@ internal object PieceCounting {
         return counts
     }
 
+    /**
+     * The pieces in a group of overlapping blobs that cover [coveredArea] together. Where the area is that of a
+     * cluster, it counts like one. Where it is that of at most one piece, the area cannot tell one piece that was
+     * reported twice from a piece that another one covers: the model's masks are not exclusive, so the mask of the
+     * covering piece reaches over the visible part of the piece below, and that part is reported as a small blob of
+     * its own that lies mostly inside the big one (pictures of such places in the test photos show real, mostly
+     * covered pieces, with a confidence of 0.4 to 0.6). Such blobs count as pieces of their own, as many as there are
+     * blobs but at most three; only a group that covers less than [GROUP_SPLIT_MAX_RATIO] pieces is taken for the
+     * fragments of one piece.
+     */
     private fun piecesInGroup(coveredArea: Int, blobCount: Int, typicalArea: Float?): Int {
         if (typicalArea == null || typicalArea <= 0f) return blobCount
         val ratio = coveredArea / typicalArea

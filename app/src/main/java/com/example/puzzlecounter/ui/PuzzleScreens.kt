@@ -41,16 +41,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.puzzlecounter.R
 import kotlinx.coroutines.delay
 import kotlin.math.ceil
 import java.text.DateFormat
@@ -95,14 +99,14 @@ fun SplashScreen(uiState: PuzzleUiState, onTimeout: () -> Unit) {
             )
             Spacer(Modifier.height(24.dp))
             Text(
-                text = "PuzzleCounter",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Keine fehlenden Teile mehr",
+                text = stringResource(R.string.app_tagline),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -119,20 +123,20 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("PuzzleCounter", fontWeight = FontWeight.Bold) },
+                    title = { Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold) },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     actions = {
                         IconButton(onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onSettingsClicked()
                         }) {
-                            Icon(Icons.Rounded.Settings, contentDescription = "Einstellungen", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         IconButton(onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onDebugClicked()
                         }) {
-                            Icon(Icons.Rounded.Construction, contentDescription = "Entwickler-Inspektor")
+                            Icon(Icons.Rounded.Construction, contentDescription = stringResource(R.string.developer_inspector))
                         }
                     }
                 )
@@ -154,18 +158,18 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp),
+                        .heightIn(min = 64.dp),
                     shape = RoundedCornerShape(50)
                 ) {
                     Icon(Icons.Rounded.Add, contentDescription = null)
                     Spacer(Modifier.width(12.dp))
-                    Text("Neues Puzzle prüfen", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.start_new_check), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(48.dp))
 
                 Text(
-                    text = "Letzte Überprüfungen",
+                    text = stringResource(R.string.start_recent_checks),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -173,6 +177,8 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                 Spacer(Modifier.height(16.dp))
 
                 if (uiState.history.isNotEmpty()) {
+                    // Dates in the language of the app (which may differ from the language of the system).
+                    val locale = LocalConfiguration.current.locales[0]
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth().weight(1f),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -191,16 +197,22 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Column {
-                                        Text(entry.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    // The texts take what is left: long words (Russian, French) must not squeeze the symbol.
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            pluralStringResource(R.plurals.history_entry_title, entry.target, entry.target),
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
                                         Spacer(Modifier.height(4.dp))
                                         Text(
-                                            text = "Soll: ${entry.target}  |  Ist: ${entry.actual}",
+                                            text = stringResource(R.string.history_target_counted, entry.target, entry.actual),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
-                                            text = remember(entry.date) { DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(entry.date)) },
+                                            text = remember(entry.date, locale) { DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale).format(Date(entry.date)) },
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                         )
@@ -234,7 +246,7 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
                         Spacer(Modifier.height(16.dp))
-                        Text("Noch keine Überprüfungen vorhanden", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.start_no_checks), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -267,7 +279,7 @@ fun SelectionScreen(uiState: PuzzleUiState, onNextClicked: (Int) -> Unit) {
 
     AppBackground(uiState = uiState) {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Größe wählen", fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)) },
+            topBar = { TopAppBar(title = { Text(stringResource(R.string.selection_title), fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)) },
             containerColor = Color.Transparent,
             modifier = Modifier.imePadding().clickable { focusManager.clearFocus() }
         ) { padding ->
@@ -317,7 +329,7 @@ fun SelectionScreen(uiState: PuzzleUiState, onNextClicked: (Int) -> Unit) {
                                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Teile",
+                                    text = pluralStringResource(R.plurals.pieces_word, size),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -336,8 +348,8 @@ fun SelectionScreen(uiState: PuzzleUiState, onNextClicked: (Int) -> Unit) {
                             selectedSize = null
                         }
                     },
-                    label = { Text("Oder eigene Anzahl eingeben") },
-                    supportingText = { Text("Anzahl der Teile laut Packung") },
+                    label = { Text(stringResource(R.string.selection_custom_label)) },
+                    supportingText = { Text(stringResource(R.string.selection_custom_hint)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { next() }),
                     singleLine = true,
@@ -359,11 +371,11 @@ fun SelectionScreen(uiState: PuzzleUiState, onNextClicked: (Int) -> Unit) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         next()
                     },
-                    modifier = Modifier.fillMaxWidth().height(64.dp).padding(bottom = 8.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(bottom = 8.dp),
                     shape = RoundedCornerShape(50),
                     enabled = count != null
                 ) {
-                    Text("Weiter", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_next), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.width(8.dp))
                     Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null)
                 }
@@ -381,70 +393,75 @@ fun InstructionScreen(uiState: PuzzleUiState, onStartScan: () -> Unit, onPickPho
 
     AppBackground(uiState = uiState) {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Anleitung", fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)) },
+            topBar = { TopAppBar(title = { Text(stringResource(R.string.instruction_title), fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)) },
             containerColor = Color.Transparent
         ) { padding ->
             Column(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(16.dp))
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
-                    shape = RoundedCornerShape(20.dp)
+                // The instructions are taller than a small screen, a landscape screen or a large font allow:
+                // they scroll, while the buttons below stay where they can be reached.
+                Column(
+                    modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.width(12.dp))
-                            Text("Vorbereitung", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Spacer(Modifier.height(16.dp))
-
-                        if (uiState.calculatedPiles <= 1) {
-                            Text(
-                                text = "Alle Teile passen auf ein Foto. Breite sie flach und mit etwas Abstand nebeneinander aus.",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else {
-                            val perPile = ceil(uiState.targetPieceCount / uiState.calculatedPiles.toDouble()).toInt()
-                            Text(
-                                text = "Teile das Puzzle in ${uiState.calculatedPiles} etwa gleich große Haufen auf (ca. $perPile Teile pro Foto).",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Surface(
-                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
-                                Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.height(16.dp))
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Spacer(Modifier.width(12.dp))
+                                Text(stringResource(R.string.instruction_preparation), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Spacer(Modifier.height(16.dp))
+
+                            if (uiState.calculatedPiles <= 1) {
                                 Text(
-                                    text = "Wichtig: Breite jeden Haufen komplett flach aus. Teile dürfen sich nicht stapeln und sollten sich möglichst nicht berühren.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontWeight = FontWeight.Bold
+                                    text = stringResource(R.string.instruction_single_pile),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                val perPile = ceil(uiState.targetPieceCount / uiState.calculatedPiles.toDouble()).toInt()
+                                Text(
+                                    text = pluralStringResource(R.plurals.instruction_several_piles, uiState.calculatedPiles, uiState.calculatedPiles, perPile),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Fotografiert und analysiert wird der quadratische Bildausschnitt. Alle Teile eines Haufens müssen komplett darin liegen. " +
-                                "Du kannst auch ein vorhandenes Foto hochladen (Symbol neben dem Button).",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.weight(1f))
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+                                    Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        text = stringResource(R.string.instruction_important),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = stringResource(R.string.instruction_square_frame),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
@@ -456,12 +473,12 @@ fun InstructionScreen(uiState: PuzzleUiState, onStartScan: () -> Unit, onPickPho
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onStartScan()
                         },
-                        modifier = Modifier.weight(1f).height(56.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 56.dp),
                         shape = RoundedCornerShape(50)
                     ) {
                         Icon(Icons.Rounded.CameraAlt, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Scanner starten", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.instruction_start_scan), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
                     UploadPhotoButton(
                         onClick = {
@@ -477,7 +494,7 @@ fun InstructionScreen(uiState: PuzzleUiState, onStartScan: () -> Unit, onPickPho
 
 @Composable
 fun ResultScreen(uiState: PuzzleUiState, onRestart: () -> Unit) {
-    val texts = resultTexts(uiState.targetPieceCount, uiState.countedPieces, uiState.countedClusters)
+    val texts = resultTexts(uiState.targetPieceCount, uiState.countedPieces, uiState.countedClusters, uiState.calculatedPiles)
     val isComplete = texts.outcome == Outcome.COMPLETE
     val accent = when (texts.outcome) {
         Outcome.COMPLETE -> MaterialTheme.colorScheme.secondary
@@ -500,6 +517,7 @@ fun ResultScreen(uiState: PuzzleUiState, onRestart: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(24.dp)
         ) {
             Column(
@@ -538,10 +556,10 @@ fun ResultScreen(uiState: PuzzleUiState, onRestart: () -> Unit) {
                         modifier = Modifier.padding(20.dp).fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "Soll: ${uiState.targetPieceCount}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = stringResource(R.string.result_target, uiState.targetPieceCount), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Ist: ${uiState.countedPieces}",
+                            text = stringResource(R.string.result_counted, uiState.countedPieces),
                             style = MaterialTheme.typography.displaySmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -552,7 +570,7 @@ fun ResultScreen(uiState: PuzzleUiState, onRestart: () -> Unit) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = texts.title,
+                    text = texts.title.asString(),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = accent,
@@ -560,15 +578,15 @@ fun ResultScreen(uiState: PuzzleUiState, onRestart: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = texts.message,
+                    text = texts.message.asString(),
                     style = MaterialTheme.typography.titleMedium,
                     color = accent,
                     textAlign = TextAlign.Center
                 )
-                for (note in listOfNotNull(texts.hint, texts.estimate)) {
+                for (note in listOfNotNull(texts.accuracy, texts.hint, texts.estimate)) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = note,
+                        text = note.asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                         textAlign = TextAlign.Center
@@ -583,10 +601,10 @@ fun ResultScreen(uiState: PuzzleUiState, onRestart: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onRestart()
                 },
-                modifier = Modifier.fillMaxWidth().height(64.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
                 shape = RoundedCornerShape(50)
             ) {
-                Text("Neues Puzzle prüfen", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.start_new_check), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

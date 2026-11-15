@@ -8,9 +8,12 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.net.Uri
 import android.os.SystemClock
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -24,6 +27,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
+import kotlin.math.abs
 
 /**
  * The whole app flow from input to output on a real device, driven through the [PuzzleViewModel]:
@@ -42,6 +46,7 @@ class PuzzleFlowInstrumentedTest {
         val store = ViewModelStore()
         try {
             val viewModel = ViewModelProvider(store, ViewModelProvider.AndroidViewModelFactory.getInstance(app))[PuzzleViewModel::class.java]
+            viewModel.preloadModel() // what the app does at its start; the photo below waits for the model
 
             // Input: puzzle size. 10 pieces fit in a single pile.
             viewModel.setTargetPieceCount(10)
@@ -54,7 +59,7 @@ class PuzzleFlowInstrumentedTest {
             assertTrue(analyzed.isReviewingCurrentPhoto)
             assertNotNull("Die Analyse muss ein Qualitätsergebnis liefern", analyzed.currentQualityResult)
             val photoPath = analyzed.currentPhotoPath
-            assertNotNull("Analyse fehlgeschlagen: ${analyzed.currentQualityResult?.warningMessage}", photoPath)
+            assertNotNull("Analyse fehlgeschlagen: ${analyzed.currentQualityResult?.issue}", photoPath)
             assertTrue("Das annotierte Vorschaubild muss existieren", File(photoPath!!).exists())
             assertEquals("Die Vorschau gehört zur neuesten Debug-Session", photoPath, analyzed.debugSessions.first().annotPath)
 
@@ -94,7 +99,7 @@ class PuzzleFlowInstrumentedTest {
 
             viewModel.onPhotoCaptured(TestImages.fakePuzzlePhoto(pieceCount = 8))
             val first = awaitState(viewModel) { !it.isAnalyzing }
-            assertNotNull("Analyse fehlgeschlagen: ${first.currentQualityResult?.warningMessage}", first.currentPhotoPath)
+            assertNotNull("Analyse fehlgeschlagen: ${first.currentQualityResult?.issue}", first.currentPhotoPath)
             viewModel.confirmPhoto()
             val afterFirst = viewModel.uiState.value
             assertEquals(2, afterFirst.currentPileIndex)
@@ -103,7 +108,7 @@ class PuzzleFlowInstrumentedTest {
 
             viewModel.onPhotoCaptured(TestImages.fakePuzzlePhoto(pieceCount = 16))
             val second = awaitState(viewModel) { !it.isAnalyzing }
-            assertNotNull("Analyse fehlgeschlagen: ${second.currentQualityResult?.warningMessage}", second.currentPhotoPath)
+            assertNotNull("Analyse fehlgeschlagen: ${second.currentQualityResult?.issue}", second.currentPhotoPath)
             viewModel.confirmPhoto()
             val result = viewModel.uiState.value
             assertEquals(3, result.currentPileIndex)
@@ -120,6 +125,7 @@ class PuzzleFlowInstrumentedTest {
     /**
      * A wide photo from the gallery: moved into the square frame, it must be counted exactly like the same pixels
      * as a square photo of the camera (the model takes a square, so the user places the photo in a frame first).
+     * The pile has exactly the size of the model input, so no resampling can make the two differ.
      */
     @Test
     fun photoFromTheGallery_isPlacedInTheFrameAndCountedLikeACameraPhoto() {
@@ -128,35 +134,34 @@ class PuzzleFlowInstrumentedTest {
         val store = ViewModelStore()
         val widePhoto = File(app.cacheDir, "gallery_wide.png")
         try {
-            val pile = InstrumentationRegistry.getInstrumentation().context.assets.open("real_piles/pile_4.jpg").use { BitmapFactory.decodeStream(it)!! }
             val model = PuzzleModel.create(app)
+            val size = model.inputSize
+            val pile = pile4().scale(size, size)
             val expected = try {
-                TFLitePieceDetector(model).detectPieces(pile).let { it.pieceCount.also { _ -> it.maskImage.recycle() } }
+                piecesIn(model, pile)
             } finally {
                 model.close()
             }
 
-            // The pile (square) in the middle of a 4:3 photo whose sides show nothing
-            val wide = createBitmap(1440, 1080).also {
-                Canvas(it).apply { drawColor(Color.rgb(60, 50, 40)); drawBitmap(pile, 180f, 0f, null) }
+            // The pile (square) in the middle of a wide photo whose sides show nothing; the sides are an even
+            // number of pixels wide, so that the centered square starts on a whole pixel
+            val side = size / 3 / 2 * 2
+            val wide = createBitmap(size + side, size).also {
+                Canvas(it).apply { drawColor(Color.rgb(60, 50, 40)); drawBitmap(pile, side / 2f, 0f, null) }
             }
-            widePhoto.outputStream().use { wide.compress(Bitmap.CompressFormat.PNG, 100, it) }
             val viewModel = ViewModelProvider(store, ViewModelProvider.AndroidViewModelFactory.getInstance(app))[PuzzleViewModel::class.java]
             viewModel.setTargetPieceCount(200)
 
-            viewModel.loadPickedPhoto(Uri.fromFile(widePhoto))
-            val loaded = awaitState(viewModel) { it.pickedPhoto !is PickedPhoto.Loading }.pickedPhoto
-            assertTrue("Foto muss geladen sein: $loaded", loaded is PickedPhoto.Ready)
-            val photo = (loaded as PickedPhoto.Ready).bitmap
-            assertEquals(1440, photo.width)
-            assertEquals(1080, photo.height)
+            val photo = pickFromGallery(viewModel, widePhoto, wide)
+            assertEquals(size + side, photo.width)
+            assertEquals(size, photo.height)
 
             // Nothing moved: the frame shows the centered square, which is exactly the pile
             val region = PhotoFrame(photo.width, photo.height).regionAt(PhotoPlacement())
-            assertEquals(PhotoRegion(left = 180f, top = 0f, side = 1080f), region)
+            assertEquals(PhotoRegion(left = side / 2f, top = 0f, side = size.toFloat()), region)
             viewModel.onPickedPhotoFramed(region)
             val analyzed = awaitState(viewModel) { it.isReviewingCurrentPhoto && !it.isAnalyzing }
-            assertNotNull("Analyse fehlgeschlagen: ${analyzed.currentQualityResult?.warningMessage}", analyzed.currentPhotoPath)
+            assertNotNull("Analyse fehlgeschlagen: ${analyzed.currentQualityResult?.issue}", analyzed.currentPhotoPath)
             assertEquals("Hochgeladenes Foto zählt wie das gleiche Quadrat der Kamera", expected, analyzed.currentPieces)
 
             // The photo is released when the frame screen is left; the analysis keeps going without it
@@ -170,6 +175,100 @@ class PuzzleFlowInstrumentedTest {
             snapshot.restore()
         }
     }
+
+    /**
+     * A gallery photo whose framed part is larger than the model input (the usual case: photos are much bigger):
+     * the part is shrunk to the model input, and the count stays what it is for the pile itself.
+     */
+    @Test
+    fun largePhotoFromTheGallery_isShrunkToTheModelInputAndCountedAsBefore() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val snapshot = AppDataSnapshot(app)
+        val store = ViewModelStore()
+        val bigPhoto = File(app.cacheDir, "gallery_big.png")
+        try {
+            val pile = pile4() // 1080 x 1080 px, the model input is smaller
+            val expected = PuzzleModel.create(app).let { model ->
+                try {
+                    piecesIn(model, pile)
+                } finally {
+                    model.close()
+                }
+            }
+
+            val big = createBitmap(pile.width * 4 / 3, pile.height).also {
+                Canvas(it).apply { drawColor(Color.rgb(60, 50, 40)); drawBitmap(pile, (it.width - pile.width) / 2f, 0f, null) }
+            }
+            val viewModel = ViewModelProvider(store, ViewModelProvider.AndroidViewModelFactory.getInstance(app))[PuzzleViewModel::class.java]
+            viewModel.setTargetPieceCount(200)
+
+            val photo = pickFromGallery(viewModel, bigPhoto, big)
+            val region = PhotoFrame(photo.width, photo.height).regionAt(PhotoPlacement())
+            assertEquals(PhotoRegion(left = (big.width - pile.width) / 2f, top = 0f, side = pile.height.toFloat()), region)
+            viewModel.onPickedPhotoFramed(region)
+            val analyzed = awaitState(viewModel) { it.isReviewingCurrentPhoto && !it.isAnalyzing }
+            assertNotNull("Analyse fehlgeschlagen: ${analyzed.currentQualityResult?.issue}", analyzed.currentPhotoPath)
+            // Shrunk by the app or by the detector: the pixels differ a little, the count by one or two pieces at most
+            assertTrue("${analyzed.currentPieces} Teile statt $expected", abs(analyzed.currentPieces - expected) <= 2)
+        } finally {
+            bigPhoto.delete()
+            store.clear()
+            snapshot.restore()
+        }
+    }
+
+    /**
+     * Android may end the process of an app that rests in the background - while the user lays out the next pile.
+     * The check must then go on where it was (the saved state is what the system gives back to the new process),
+     * not start over and not finish with an empty state ("Soll: 0").
+     */
+    @Test
+    fun aCheckInProgress_goesOnAfterTheSystemEndedTheProcess() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val snapshot = AppDataSnapshot(app)
+        val saved = SavedStateHandle()
+        val firstProcess = ViewModelStore()
+        val secondProcess = ViewModelStore()
+        val thirdProcess = ViewModelStore()
+        try {
+            val first = viewModelWith(saved, firstProcess, app)
+            assertEquals("ohne Prüfung beginnt die App leer", 0, first.uiState.value.targetPieceCount)
+            first.setTargetPieceCount(600)
+            first.onPhotoCaptured(TestImages.fakePuzzlePhoto(pieceCount = 8))
+            val analyzed = awaitState(first) { !it.isAnalyzing }
+            assertNotNull("Analyse fehlgeschlagen: ${analyzed.currentQualityResult?.issue}", analyzed.currentPhotoPath)
+            first.confirmPhoto()
+            val before = first.uiState.value
+            assertEquals(2, before.currentPileIndex)
+            firstProcess.clear() // the system ends the process ...
+
+            // ... and the new process continues with the second of three piles
+            val second = viewModelWith(saved, secondProcess, app)
+            val restored = second.uiState.value
+            assertEquals(600, restored.targetPieceCount)
+            assertEquals(3, restored.calculatedPiles)
+            assertEquals(2, restored.currentPileIndex)
+            assertEquals(before.countedPieces, restored.countedPieces)
+            assertEquals(before.countedClusters, restored.countedClusters)
+            assertFalse("das Foto, das gerade ausgewertet wurde, ist weg: die Kamera beginnt neu", restored.isReviewingCurrentPhoto)
+
+            // a new check starts empty again; what was left over is not brought back later
+            second.reset()
+            secondProcess.clear()
+            assertEquals(0, viewModelWith(saved, thirdProcess, app).uiState.value.targetPieceCount)
+        } finally {
+            firstProcess.clear()
+            secondProcess.clear()
+            thirdProcess.clear()
+            snapshot.restore()
+        }
+    }
+
+    private fun viewModelWith(saved: SavedStateHandle, store: ViewModelStore, app: Application): PuzzleViewModel =
+        ViewModelProvider(store, object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T = PuzzleViewModel(app, saved) as T
+        })[PuzzleViewModel::class.java]
 
     @Test
     fun galleryFileThatIsNoPhoto_isReportedAsFailed() {
@@ -186,6 +285,23 @@ class PuzzleFlowInstrumentedTest {
             text.delete()
             store.clear()
         }
+    }
+
+    /** Pile 4 of the real photos (1080 x 1080 px). */
+    private fun pile4(): Bitmap =
+        InstrumentationRegistry.getInstrumentation().context.assets.open("real_piles/pile_4.jpg").use { BitmapFactory.decodeStream(it)!! }
+
+    /** The pieces the detector counts in [photo], without anything of the app around it. */
+    private fun piecesIn(model: PuzzleModel, photo: Bitmap): Int =
+        TFLitePieceDetector(model).detectPieces(photo).let { it.pieceCount.also { _ -> it.maskImage.recycle() } }
+
+    /** Saves [photo] as a file, picks it like a photo from the gallery and returns the bitmap the app got. */
+    private fun pickFromGallery(viewModel: PuzzleViewModel, file: File, photo: Bitmap): Bitmap {
+        file.outputStream().use { photo.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        viewModel.loadPickedPhoto(Uri.fromFile(file))
+        val loaded = awaitState(viewModel) { it.pickedPhoto !is PickedPhoto.Loading }.pickedPhoto
+        assertTrue("Foto muss geladen sein: $loaded", loaded is PickedPhoto.Ready)
+        return (loaded as PickedPhoto.Ready).bitmap
     }
 
     private fun awaitState(viewModel: PuzzleViewModel, timeoutMs: Long = 120_000, predicate: (PuzzleUiState) -> Boolean): PuzzleUiState {

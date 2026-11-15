@@ -18,8 +18,9 @@ import kotlin.math.roundToInt
 private const val TAG = "PickedPhoto"
 
 /**
- * A picked photo is decoded with its long side at most this long. The analysis works with 640 px, so even a quarter
- * of such a photo is sharp enough, and every region that can be cut out is shrunk by less than a factor of two.
+ * A picked photo is decoded with its long side at most this long. The analysis works with 1024 px (the model input),
+ * so even half of such a photo is sharp enough, and every region that can be cut out is shrunk by a factor of two at
+ * most (a bigger factor would skip pixels instead of averaging them).
  */
 private const val MAX_PICKED_SIDE = 2048
 
