@@ -108,8 +108,7 @@ class PuzzleViewModel @JvmOverloads constructor(
 
     /** Starts a new puzzle check; progress of a previous one is discarded. */
     fun setTargetPieceCount(count: Int) {
-        val piles = ceil(count / PIECES_PER_PILE.toDouble()).toInt().coerceAtLeast(1)
-        _uiState.value = newSessionState().copy(targetPieceCount = count, calculatedPiles = piles).also(::keepCheck)
+        _uiState.value = newSessionState().copy(targetPieceCount = count, calculatedPiles = pilesFor(count)).also(::keepCheck)
     }
 
     /**
@@ -316,6 +315,9 @@ class PuzzleViewModel @JvmOverloads constructor(
     companion object {
         /** Pieces per photo: bigger puzzles are split into several piles of about this size. */
         const val PIECES_PER_PILE = 200
+
+        /** The piles (photos) a puzzle of [pieces] pieces is counted in; the same for a check that is made now and one in the history. */
+        fun pilesFor(pieces: Int): Int = ceil(pieces / PIECES_PER_PILE.toDouble()).toInt().coerceAtLeast(1)
 
         private const val TAG = "PuzzleViewModel"
 

@@ -10,7 +10,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.puzzlecounter"
+        applicationId = "com.hugenay.puzzlecounter"
         minSdk = 26
         targetSdk = 37
         versionCode = 1

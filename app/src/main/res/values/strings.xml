@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- English (default for every other language) texts of PuzzleCounter. Keep the keys and placeholders the same in every language file (checked by StringResourcesTest). -->
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- The same in every language: the name of the app and each language in its own language. -->
-    <string name="app_name" translatable="false">PuzzleCounter</string>
+    <!-- The same in every language: the name of the app, each language in its own language and the brand names of puzzle makers. -->
+    <string name="app_name" translatable="false">Piece Counter</string>
     <string name="language_english" translatable="false">English</string>
     <string name="language_german" translatable="false">Deutsch</string>
     <string name="language_spanish" translatable="false">Español</string>
     <string name="language_russian" translatable="false">Русский</string>
     <string name="language_french" translatable="false">Français</string>
+    <string name="maker_ravensburger" translatable="false">Ravensburger</string>
+    <string name="maker_educa" translatable="false">Educa</string>
+    <string name="maker_clementoni" translatable="false">Clementoni</string>
+    <string name="maker_grafika" translatable="false">Grafika</string>
+    <string name="maker_dowdle" translatable="false">Dowdle</string>
 
     <string name="app_tagline">No more missing pieces</string>
 
@@ -27,7 +32,7 @@
     <string name="start_recent_checks">Recent checks</string>
     <string name="start_no_checks">No checks yet</string>
 
-    <string name="history_target_counted">Target: %1$d  |  Counted: %2$d</string>
+    <string name="history_target_counted">Target: %1$,d  |  Counted: %2$,d</string>
 
     <string name="selection_title">Choose size</string>
     <string name="selection_custom_label">Or enter your own number</string>
@@ -40,8 +45,6 @@
     <string name="instruction_square_frame">Only the square frame is photographed and analyzed. All pieces of a pile must lie completely inside it. You can also upload an existing photo (icon next to the button).</string>
     <string name="instruction_start_scan">Start scanner</string>
 
-    <string name="result_target">Target: %1$d</string>
-    <string name="result_counted">Counted: %1$d</string>
     <string name="result_title_complete">Perfect!</string>
     <string name="result_message_complete">All pieces are there.</string>
     <string name="result_title_missing">Attention!</string>
@@ -49,6 +52,12 @@
     <string name="result_title_too_many">More pieces than expected</string>
     <string name="result_hint_too_many">Possible reasons: the puzzle has more pieces than stated, pieces of another puzzle got mixed in, or pieces were counted twice.</string>
     <string name="result_accuracy_advice">If you want to be sure, lay the pieces out with some space between them and count again.</string>
+    <string name="result_figure_box">Box</string>
+    <string name="result_figure_scanned">Scanned</string>
+    <string name="result_figure_possible">Possible</string>
+    <string name="result_message_other_size">You selected %1$,d. Did you choose the right puzzle size? Please check the piece count on the box.</string>
+    <string name="result_tip_edge_pieces">To check, count the edge pieces including the 4 corners: for a %1$s grid there are %2$d.</string>
+    <string name="result_tip_edge_compare">To tell the sizes apart, count the edge pieces including the 4 corners: %1$d → %3$,d (grid %2$s), %4$d → %6$,d (grid %5$s).</string>
 
     <string name="camera_permission_needed">To photograph the puzzle pieces, the app needs access to the camera.</string>
     <string name="camera_permission_denied">Camera access was denied. You can allow it in the app settings.</string>
@@ -130,11 +139,14 @@
     <string name="inspector_mode_mask">Mask</string>
     <string name="inspector_mode_original">Original</string>
     <string name="inspector_measurements">Measurements &amp; metadata</string>
-    <string name="inspector_pieces">Pieces: %1$d</string>
+    <string name="inspector_pieces">Pieces: %1$,d</string>
     <string name="inspector_overlap_places">Places with overlapping pieces: %1$d</string>
     <string name="inspector_saved_scan">Saved scan</string>
     <string name="inspector_image_failed">Image could not be loaded.</string>
     <string name="inspector_select_scan">Select scan</string>
+
+    <string name="maker_us_standard">US standard</string>
+    <string name="maker_various">Various brands</string>
 
     <!-- Plurals: the number that selects the form is also inserted as %d. -->
     <plurals name="pieces_word" tools:ignore="ImpliedQuantity">
@@ -142,24 +154,24 @@
         <item quantity="other">pieces</item>
     </plurals>
     <plurals name="pieces_count">
-        <item quantity="one">%d piece</item>
-        <item quantity="other">%d pieces</item>
+        <item quantity="one">%,d piece</item>
+        <item quantity="other">%,d pieces</item>
     </plurals>
     <plurals name="history_entry_title">
-        <item quantity="one">Puzzle with %d piece</item>
-        <item quantity="other">Puzzle with %d pieces</item>
+        <item quantity="one">Puzzle with %,d piece</item>
+        <item quantity="other">Puzzle with %,d pieces</item>
     </plurals>
     <plurals name="instruction_several_piles">
         <item quantity="one">Split the puzzle into %1$d pile of about the same size (about %2$d pieces per photo).</item>
         <item quantity="other">Split the puzzle into %1$d piles of about the same size (about %2$d pieces per photo).</item>
     </plurals>
     <plurals name="result_message_missing">
-        <item quantity="one">%d piece is missing.</item>
-        <item quantity="other">%d pieces are missing.</item>
+        <item quantity="one">%,d piece is missing.</item>
+        <item quantity="other">%,d pieces are missing.</item>
     </plurals>
     <plurals name="result_message_too_many">
-        <item quantity="one">%d piece more than stated was counted.</item>
-        <item quantity="other">%d pieces more than stated were counted.</item>
+        <item quantity="one">%,d piece more than stated was counted.</item>
+        <item quantity="other">%,d pieces more than stated were counted.</item>
     </plurals>
     <plurals name="result_estimate">
         <item quantity="one">In %d place, pieces lay on top of each other or touched – the number there is estimated. For an exact result, lay the pieces out with some space between them.</item>
@@ -176,5 +188,25 @@
     <plurals name="review_estimated_places">
         <item quantity="one">%d place with overlapping pieces – estimated there</item>
         <item quantity="other">%d places with overlapping pieces – estimated there</item>
+    </plurals>
+    <plurals name="result_scanned">
+        <item quantity="one">%,d piece scanned</item>
+        <item quantity="other">%,d pieces scanned</item>
+    </plurals>
+    <plurals name="result_title_exact_variant">
+        <item quantity="one">Your puzzle may contain %,d piece</item>
+        <item quantity="other">Your puzzle may contain %,d pieces</item>
+    </plurals>
+    <plurals name="result_message_exact_variant">
+        <item quantity="one">The box says %1$,d, but that number is often rounded: some puzzles with it really have exactly %2$,d piece. Please read the exact piece count on the box again.</item>
+        <item quantity="other">The box says %1$,d, but that number is often rounded: some puzzles with it really have exactly %2$,d pieces. Please read the exact piece count on the box again.</item>
+    </plurals>
+    <plurals name="result_title_other_size">
+        <item quantity="one">Matches a puzzle with %,d piece</item>
+        <item quantity="other">Matches a puzzle with %,d pieces</item>
+    </plurals>
+    <plurals name="result_note_larger_variant">
+        <item quantity="one">Note: some puzzles marked %1$,d really have %2$,d piece. With such a puzzle, %3$d would be missing.</item>
+        <item quantity="other">Note: some puzzles marked %1$,d really have %2$,d pieces. With such a puzzle, %3$d would be missing.</item>
     </plurals>
 </resources>

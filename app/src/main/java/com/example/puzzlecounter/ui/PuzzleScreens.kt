@@ -15,18 +15,15 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Construction
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.History
@@ -51,7 +48,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puzzlecounter.R
@@ -184,7 +180,8 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(uiState.history) { entry ->
-                            val isComplete = entry.target == entry.actual
+                            // the same judgement as on the result screen, so that the history does not contradict it
+                            val outcome = remember(entry.target, entry.actual) { historyOutcome(entry.target, entry.actual) }
                             ElevatedCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
@@ -219,13 +216,25 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                                     }
                                     Surface(
                                         shape = RoundedCornerShape(50),
-                                        color = if (isComplete) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
+                                        color = when (outcome) {
+                                            Outcome.COMPLETE -> MaterialTheme.colorScheme.secondaryContainer
+                                            Outcome.EXACT_VARIANT -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                            else -> MaterialTheme.colorScheme.errorContainer
+                                        },
                                         modifier = Modifier.padding(start = 8.dp)
                                     ) {
                                         Icon(
-                                            imageVector = if (isComplete) Icons.Rounded.Check else Icons.Rounded.Warning,
+                                            imageVector = when (outcome) {
+                                                Outcome.COMPLETE -> Icons.Rounded.Check
+                                                Outcome.EXACT_VARIANT -> Icons.Rounded.Info
+                                                else -> Icons.Rounded.Warning
+                                            },
                                             contentDescription = null,
-                                            tint = if (isComplete) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
+                                            tint = when (outcome) {
+                                                Outcome.COMPLETE -> MaterialTheme.colorScheme.secondary
+                                                Outcome.EXACT_VARIANT -> MaterialTheme.colorScheme.primary
+                                                else -> MaterialTheme.colorScheme.error
+                                            },
                                             modifier = Modifier.padding(12.dp).size(24.dp)
                                         )
                                     }
@@ -487,124 +496,6 @@ fun InstructionScreen(uiState: PuzzleUiState, onStartScan: () -> Unit, onPickPho
                         }
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun ResultScreen(uiState: PuzzleUiState, onRestart: () -> Unit) {
-    val texts = resultTexts(uiState.targetPieceCount, uiState.countedPieces, uiState.countedClusters, uiState.calculatedPiles)
-    val isComplete = texts.outcome == Outcome.COMPLETE
-    val accent = when (texts.outcome) {
-        Outcome.COMPLETE -> MaterialTheme.colorScheme.secondary
-        Outcome.TOO_MANY -> MaterialTheme.colorScheme.tertiary
-        Outcome.MISSING -> MaterialTheme.colorScheme.error
-    }
-    val accentContainer = when (texts.outcome) {
-        Outcome.COMPLETE -> MaterialTheme.colorScheme.secondaryContainer
-        Outcome.TOO_MANY -> MaterialTheme.colorScheme.tertiaryContainer
-        Outcome.MISSING -> MaterialTheme.colorScheme.errorContainer
-    }
-    val haptic = LocalHapticFeedback.current
-
-    LaunchedEffect(isComplete) {
-        if (isComplete) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-    }
-
-    AppBackground(uiState = uiState) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(24.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = accentContainer,
-                    modifier = Modifier.size(104.dp)
-                ) {
-                    Icon(
-                        imageVector = when (texts.outcome) {
-                            Outcome.COMPLETE -> Icons.Rounded.CheckCircle
-                            Outcome.TOO_MANY -> Icons.AutoMirrored.Rounded.HelpOutline
-                            Outcome.MISSING -> Icons.Rounded.Warning
-                        },
-                        contentDescription = null,
-                        modifier = Modifier.padding(24.dp).fillMaxSize(),
-                        tint = accent
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp).fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = stringResource(R.string.result_target, uiState.targetPieceCount), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(R.string.result_counted, uiState.countedPieces),
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = texts.title.asString(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = accent,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = texts.message.asString(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = accent,
-                    textAlign = TextAlign.Center
-                )
-                for (note in listOfNotNull(texts.accuracy, texts.hint, texts.estimate)) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = note.asString(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onRestart()
-                },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
-                shape = RoundedCornerShape(50)
-            ) {
-                Text(stringResource(R.string.start_new_check), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
