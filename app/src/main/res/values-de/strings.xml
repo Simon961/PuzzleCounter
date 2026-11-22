@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- German texts of Piece Counter. Keep the keys and placeholders the same in every language file (checked by StringResourcesTest). -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <string name="action_back">Zurück</string>
+    <string name="action_next">Weiter</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_confirm">Bestätigen</string>
+    <string name="action_close">Schließen</string>
+
+    <string name="settings">Einstellungen</string>
+
+    <string name="upload_photo">Foto hochladen</string>
+
+    <string name="start_new_check">Neues Puzzle prüfen</string>
+    <string name="start_recent_checks">Letzte Überprüfungen</string>
+    <string name="start_no_checks">Noch keine Überprüfungen</string>
+
+    <string name="history_target_counted">Soll: %1$,d  |  Ist: %2$,d</string>
+    <string name="history_detail_photo_number">Foto %1$d</string>
+    <string name="history_detail_photo_warned">Trotz Qualitätshinweis übernommen</string>
+    <string name="history_detail_photos_unknown">Die Zahlen der einzelnen Fotos wurden für diese Prüfung nicht gespeichert.</string>
+
+    <string name="selection_title">Größe wählen</string>
+    <string name="selection_custom_label">Oder eigene Anzahl eingeben</string>
+    <string name="selection_custom_hint">Anzahl der Teile laut Packung</string>
+
+    <string name="instruction_title">Anleitung</string>
+    <string name="instruction_preparation">Vorbereitung</string>
+    <string name="instruction_single_pile">Alle Teile passen auf ein Foto. Breite sie flach und mit etwas Abstand nebeneinander aus.</string>
+    <string name="instruction_important">Wichtig: Breite jeden Haufen komplett flach aus. Teile dürfen sich nicht stapeln und sollten sich möglichst nicht berühren.</string>
+    <string name="instruction_square_frame">Fotografiert und ausgewertet wird nur der quadratische Bildausschnitt. Alle Teile eines Haufens müssen vollständig darin liegen. Du kannst auch ein vorhandenes Foto hochladen (Symbol neben dem Button).</string>
+    <string name="instruction_start_scan">Scanner starten</string>
+
+    <string name="result_title_complete">Perfekt!</string>
+    <string name="result_message_complete">Alle Teile sind vorhanden.</string>
+    <string name="result_title_missing">Achtung!</string>
+    <string name="result_hint_missing">Prüfe, ob alle Teile auf dem Foto liegen: Teile unter anderen Teilen oder außerhalb des Fotos werden nicht erkannt.</string>
+    <string name="result_title_too_many">Mehr Teile als erwartet</string>
+    <string name="result_hint_too_many">Mögliche Gründe: Das Puzzle hat mehr Teile als angegeben, es liegen Teile eines anderen Puzzles dabei, oder Teile wurden doppelt gezählt.</string>
+    <string name="result_accuracy_advice">Wenn du sicher sein willst, lege die Teile mit Abstand aus und zähle noch einmal.</string>
+    <string name="result_figure_box">Packung</string>
+    <string name="result_figure_scanned">Gescannt</string>
+    <string name="result_figure_possible">Möglich</string>
+    <string name="result_message_other_size">Du hast %1$,d gewählt. Hast du die richtige Puzzlegröße ausgewählt? Prüfe die Teilezahl auf der Verpackung.</string>
+    <string name="result_tip_edge_pieces">Zur Kontrolle: Zähle die Randteile (mit den 4 Ecken). Bei einem Raster von %1$s sind es %2$d.</string>
+    <string name="result_tip_edge_compare">Zum Unterscheiden die Randteile (mit den 4 Ecken) zählen: %1$d → %3$,d (Raster %2$s), %4$d → %6$,d (Raster %5$s).</string>
+
+    <string name="camera_permission_needed">Zum Fotografieren der Puzzleteile braucht die App Zugriff auf die Kamera.</string>
+    <string name="camera_permission_denied">Der Zugriff auf die Kamera wurde abgelehnt. Du kannst ihn in den Einstellungen der App erlauben.</string>
+    <string name="camera_permission_grant">Berechtigung erteilen</string>
+    <string name="camera_permission_open_settings">App-Einstellungen öffnen</string>
+
+    <string name="upload_photo_instead">Stattdessen Foto hochladen</string>
+
+    <string name="camera_failed">Die Kamera konnte nicht gestartet werden. Du kannst stattdessen ein Foto hochladen (Symbol unten links).</string>
+
+    <string name="capture_failed">Die Aufnahme hat nicht geklappt. Bitte noch einmal versuchen.</string>
+    <string name="capture_pile_progress">Haufen %1$d / %2$d</string>
+    <string name="capture_single_photo">Alle Teile in einem Foto</string>
+
+    <string name="torch_on">Taschenlampe einschalten</string>
+    <string name="torch_off">Taschenlampe ausschalten</string>
+
+    <string name="take_photo">Foto aufnehmen</string>
+
+    <string name="review_photo_description">Analysiertes Foto</string>
+
+    <string name="analyzing_photo">Foto wird analysiert …</string>
+    <string name="analyzing_pile">Haufen %1$d von %2$d wird analysiert …</string>
+
+    <string name="action_confirm_continue">Bestätigen &amp; weiter</string>
+    <string name="action_choose_other_photo">Anderes Foto wählen</string>
+    <string name="action_retake">Neu aufnehmen</string>
+    <string name="action_choose_other_photo_recommended">Anderes Foto wählen (empfohlen)</string>
+    <string name="action_retake_recommended">Neu aufnehmen (empfohlen)</string>
+    <string name="action_continue_anyway">Trotzdem fortfahren</string>
+
+    <string name="issue_too_dark">Zu dunkel! Bitte für mehr Licht sorgen.</string>
+    <string name="issue_overexposed">Überbelichtet! Blendendes Licht vermeiden.</string>
+    <string name="issue_blurry">Das Foto ist unscharf! Bitte mit ruhiger Hand neu aufnehmen oder ein schärferes Foto wählen.</string>
+    <string name="issue_pieces_too_small">Die Teile sind im Foto zu klein für eine sichere Zählung! Bitte näher an den Haufen herangehen oder weniger Teile pro Foto auslegen.</string>
+    <string name="issue_stacked">Teile liegen übereinander! Bitte flach nebeneinander ausbreiten.</string>
+    <string name="issue_analysis_failed">Die Analyse ist fehlgeschlagen. Bitte versuche es mit einem neuen Foto noch einmal.</string>
+    <string name="issue_model_unavailable">Die Bilderkennung konnte nicht gestartet werden. Bitte prüfe, ob die Google Play-Dienste auf dem Handy aktuell sind und beim ersten Start eine Internetverbindung besteht, und versuche es noch einmal.</string>
+    <string name="issue_out_of_memory">Für die Analyse ist zu wenig Arbeitsspeicher frei. Bitte schließe andere Apps und versuche es noch einmal.</string>
+
+    <string name="frame_title">Foto ausrichten</string>
+    <string name="frame_open_failed">Das Foto konnte nicht geöffnet werden.</string>
+    <string name="frame_instructions">Verschiebe das Foto und zoome mit zwei Fingern, bis alle Puzzleteile im Quadrat liegen. Gezählt wird nur, was im Quadrat zu sehen ist.</string>
+    <string name="frame_square_description">Quadrat: Foto verschieben und zoomen</string>
+
+    <string name="settings_background_title">Hintergrundbild &amp; Darstellung</string>
+    <string name="settings_background_summary">Motiv auswählen und Helligkeit anpassen</string>
+    <string name="settings_language_title">Sprache</string>
+    <string name="settings_info_title">Info &amp; Rechtliches</string>
+    <string name="settings_info_summary">Version, Datenschutz &amp; Lizenzen</string>
+
+    <string name="language_system_default">Systemstandard</string>
+
+    <string name="background_title">Hintergrundbild</string>
+    <string name="background_appearance">Erscheinungsbild</string>
+    <string name="background_brightness">Helligkeit</string>
+    <string name="background_brightness_value">%1$d %%</string>
+    <string name="background_selected">Ausgewählt</string>
+    <string name="background_cyber_indigo">Cyber-Indigo</string>
+    <string name="background_tech_symmetry">Tech-Symmetrie</string>
+    <string name="background_obsidian_edges">Obsidian-Kanten</string>
+    <string name="background_dice_board">Würfel &amp; Brett</string>
+
+    <string name="info_title">Über Piece Counter</string>
+    <string name="info_version">Version %1$s (Build %2$d)</string>
+    <string name="info_version_unknown">Version unbekannt</string>
+    <string name="info_privacy_title">Kamera, Fotos &amp; Datenschutz</string>
+    <string name="info_privacy_text">Piece Counter nutzt die Kamera (oder ein Foto, das du aus der Galerie auswählst) ausschließlich, um Puzzleteile zu erkennen und zu zählen. Die Fotos werden direkt auf deinem Gerät mit einem integrierten TensorFlow-Lite-Modell analysiert und zu keinem Zeitpunkt an Server, Cloud-Dienste oder Dritte übertragen. Ein Foto bleibt nur so lange auf deinem Gerät, wie du dir seine Auswertung ansiehst, und wird gelöscht, sobald du weitermachst, es neu aufnimmst oder die Prüfung schließt; im Verlauf werden nur die Zahlen jeder Prüfung gespeichert.</string>
+    <string name="info_privacy_services_text">Die TensorFlow-Lite-Laufzeit, die das Modell ausführt, stellen die Google Play-Dienste bereit. Sie kann Updates von Google herunterladen und sendet technische Diagnose- und Nutzungsdaten über sich selbst an Google (zum Beispiel Gerätemodell, Android- und App-Version, eine Gerätekennung, Fehler und Geschwindigkeit), wie in der Datenschutzerklärung von Google beschrieben – aber niemals deine Fotos.</string>
+    <string name="info_privacy_policy_text">Die vollständige Datenschutzerklärung dieser App ist im Internet veröffentlicht:</string>
+    <string name="info_developer_title">Entwickler</string>
+    <string name="info_developer_text">Entwickelt als privates Projekt zum Zählen von Puzzleteilen.</string>
+    <string name="info_link_open">Im Browser öffnen</string>
+    <string name="info_link_failed">Keine App zum Öffnen dieses Links gefunden.</string>
+    <string name="info_licenses_title">Lizenzen &amp; rechtliche Hinweise</string>
+    <string name="info_licenses_intro">Piece Counter wurde mit Open-Source-Software, den Google Play-Diensten und einem Objekterkennungsmodell gebaut. Ihre Hinweise stehen hier; die vollständigen Lizenztexte findest du ganz am Ende dieser Seite.</string>
+    <string name="info_components_title">Verwendete Komponenten</string>
+    <string name="info_component_model_name">Objekterkennungsmodell (Ultralytics YOLO26)</string>
+    <string name="info_model_title">Zum Erkennungsmodell</string>
+    <string name="info_model_text">Das Modell, das die Puzzleteile in deinen Fotos findet, wurde mit Ultralytics YOLO (YOLO26) trainiert und steht unter der GNU Affero General Public License v3.0 (AGPL-3.0). Ultralytics veröffentlicht die Lizenzbedingungen und den Quellcode von Ultralytics YOLO hier:</string>
+    <string name="info_license_texts_title">Lizenztexte</string>
+    <string name="info_license_texts_note">Rechtsverbindlich ist nur der englische Originalwortlaut einer Lizenz; die folgenden Texte werden deshalb in jeder Sprache auf Englisch angezeigt.</string>
+    <string name="info_license_google_title">Bedingungen der Google Play-Dienste</string>
+    <string name="info_license_google_text">Die Google Play-Dienste werden von Google LLC unter dem Android Software Development Kit License Agreement bereitgestellt; für die Nutzung der TensorFlow-Lite-Laufzeit in den Google Play-Diensten gelten die Google APIs Terms of Service. Google veröffentlicht diese Bedingungen online, dort sind die jeweils aktuellen Fassungen nachzulesen:</string>
+    <string name="info_license_state_expanded">Aufgeklappt</string>
+    <string name="info_license_state_collapsed">Zugeklappt</string>
+
+    <string name="maker_us_standard">US-Standard</string>
+    <string name="maker_various">Verschiedene Marken</string>
+
+    <!-- Plurals: the number that selects the form is also inserted as %d. -->
+    <plurals name="pieces_word" tools:ignore="ImpliedQuantity">
+        <item quantity="one">Teil</item>
+        <item quantity="other">Teile</item>
+    </plurals>
+    <plurals name="pieces_count">
+        <item quantity="one">%,d Teil</item>
+        <item quantity="other">%,d Teile</item>
+    </plurals>
+    <plurals name="history_entry_title">
+        <item quantity="one">Puzzle mit %,d Teil</item>
+        <item quantity="other">Puzzle mit %,d Teilen</item>
+    </plurals>
+    <plurals name="history_detail_photos">
+        <item quantity="one">%d Foto</item>
+        <item quantity="other">%d Fotos</item>
+    </plurals>
+    <plurals name="instruction_several_piles">
+        <item quantity="one">Teile das Puzzle in %1$d etwa gleich großen Haufen auf (ca. %2$d Teile pro Foto).</item>
+        <item quantity="other">Teile das Puzzle in %1$d etwa gleich große Haufen auf (ca. %2$d Teile pro Foto).</item>
+    </plurals>
+    <plurals name="result_message_missing">
+        <item quantity="one">Es fehlt %,d Teil.</item>
+        <item quantity="other">Es fehlen %,d Teile.</item>
+    </plurals>
+    <plurals name="result_message_too_many">
+        <item quantity="one">Es wurde %,d Teil mehr gezählt als angegeben.</item>
+        <item quantity="other">Es wurden %,d Teile mehr gezählt als angegeben.</item>
+    </plurals>
+    <plurals name="result_estimate">
+        <item quantity="one">An %d Stelle lagen Teile übereinander oder berührten sich – dort ist die Zahl geschätzt. Für ein genaues Ergebnis lege die Teile mit Abstand aus.</item>
+        <item quantity="other">An %d Stellen lagen Teile übereinander oder berührten sich – dort ist die Zahl geschätzt. Für ein genaues Ergebnis lege die Teile mit Abstand aus.</item>
+    </plurals>
+    <plurals name="result_accuracy_missing">
+        <item quantity="one">Der Unterschied liegt im Bereich der Zählgenauigkeit (etwa ±%d Teil): Möglicherweise fehlt nichts.</item>
+        <item quantity="other">Der Unterschied liegt im Bereich der Zählgenauigkeit (etwa ±%d Teile): Möglicherweise fehlt nichts.</item>
+    </plurals>
+    <plurals name="result_accuracy_too_many">
+        <item quantity="one">Der Unterschied liegt im Bereich der Zählgenauigkeit (etwa ±%d Teil): Möglicherweise sind es nicht mehr Teile als angegeben.</item>
+        <item quantity="other">Der Unterschied liegt im Bereich der Zählgenauigkeit (etwa ±%d Teile): Möglicherweise sind es nicht mehr Teile als angegeben.</item>
+    </plurals>
+    <plurals name="review_estimated_places">
+        <item quantity="one">%d Stelle mit überlappenden Teilen – dort geschätzt</item>
+        <item quantity="other">%d Stellen mit überlappenden Teilen – dort geschätzt</item>
+    </plurals>
+    <plurals name="result_scanned">
+        <item quantity="one">%,d Teil gescannt</item>
+        <item quantity="other">%,d Teile gescannt</item>
+    </plurals>
+    <plurals name="result_title_exact_variant">
+        <item quantity="one">Dein Puzzle könnte %,d Teil enthalten</item>
+        <item quantity="other">Dein Puzzle könnte %,d Teile enthalten</item>
+    </plurals>
+    <plurals name="result_message_exact_variant">
+        <item quantity="one">Auf der Packung steht %1$,d – diese Angabe ist oft gerundet: Manche Puzzles haben genau %2$,d Teil. Lies die Teilezahl noch einmal genau auf der Verpackung nach.</item>
+        <item quantity="other">Auf der Packung steht %1$,d – diese Angabe ist oft gerundet: Manche Puzzles haben genau %2$,d Teile. Lies die Teilezahl noch einmal genau auf der Verpackung nach.</item>
+    </plurals>
+    <plurals name="result_title_other_size">
+        <item quantity="one">Passt zu einem Puzzle mit %,d Teil</item>
+        <item quantity="other">Passt zu einem Puzzle mit %,d Teilen</item>
+    </plurals>
+    <plurals name="result_note_larger_variant">
+        <item quantity="one">Hinweis: Manche Puzzles mit der Angabe %1$,d haben genau %2$,d Teil. Bei einem solchen Puzzle würden %3$d fehlen.</item>
+        <item quantity="other">Hinweis: Manche Puzzles mit der Angabe %1$,d haben genau %2$,d Teile. Bei einem solchen Puzzle würden %3$d fehlen.</item>
+    </plurals>
+</resources>

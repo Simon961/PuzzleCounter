@@ -245,6 +245,27 @@ class ResultTextsTest {
         }
     }
 
+    @Test
+    fun aCheckOfTheHistory_saysWhatItsResultScreenSaid() {
+        // 200 entered, 203 counted in one photo with two places where the number was estimated: 204 may be right
+        val entry = PuzzleHistoryEntry("Puzzle 200", 1L, 200, 203, listOf(PhotoCount(203, clusters = 2)))
+        val texts = resultTextsOf(entry)
+        val screen = result(200, 203, estimatedGroups = 2)
+        assertEquals(Outcome.EXACT_VARIANT, texts.outcome)
+        assertEquals(screen.scanned, texts.scanned)
+        assertEquals(screen.title, texts.title)
+        assertEquals(screen.message, texts.message)
+        assertEquals(screen.notes, texts.notes)
+        assertEquals(UiText.Plural(R.plurals.result_estimate, 2), texts.notes.last())
+        assertEquals(listOf(200, 203, 204), texts.figures.map { it.count })
+
+        // a check saved before the photos were kept: the same judgement, only without the places that were estimated
+        val earlier = resultTextsOf(PuzzleHistoryEntry("Puzzle 200", 1L, 200, 204))
+        assertEquals(Outcome.EXACT_VARIANT, earlier.outcome)
+        assertEquals(result(200, 204).notes, earlier.notes)
+        assertTrue(earlier.notes.none { it is UiText.Plural && it.id == R.plurals.result_estimate })
+    }
+
     // --- the accuracy of the count ------------------------------------------------------------------------------------------------
 
     @Test

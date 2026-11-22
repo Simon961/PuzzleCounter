@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -6,7 +8,10 @@ plugins {
 android {
     namespace = "com.example.puzzlecounter"
     compileSdk {
-        version = release(37)
+        // 37.1: the current Compose libraries are built against it (the target stays 37)
+        version = release(37) {
+            minorApiLevel = 1
+        }
     }
 
     defaultConfig {
@@ -19,11 +24,36 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // The upload key is not part of the project: keystore.properties (git-ignored, next to settings.gradle.kts) holds
+    // storeFile, storePassword, keyAlias and keyPassword. Without it the release build is simply left unsigned.
+    val keystoreFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties().apply { if (keystoreFile.exists()) keystoreFile.inputStream().use(::load) }
+    signingConfigs {
+        if (keystoreFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+            // R8 for everything (app, libraries): shrinks, optimizes and renames. The keep rules of the project are in
+            // src/main/keepRules (the TensorFlow Lite classes that the Google Play services use by name).
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+            }
+            // The app has no native code of its own, but its libraries bring some (TensorFlow Lite client, CameraX,
+            // Compose graphics). This puts the symbol table of every native library that still has one into the
+            // bundle, so that the Play Console can name the functions of a native crash. Today all of these libraries
+            // are delivered stripped by their vendors (":app:extractReleaseNativeSymbolTables" says "has already been
+            // stripped"), so there is nothing to upload yet and the Play Console hint stays; it is only a recommendation.
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
             }
         }
     }

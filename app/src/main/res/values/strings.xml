@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- English (default for every other language) texts of PuzzleCounter. Keep the keys and placeholders the same in every language file (checked by StringResourcesTest). -->
+<!-- English (default for every other language) texts of Piece Counter. Keep the keys and placeholders the same in every language file (checked by StringResourcesTest). -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- The same in every language: the name of the app, each language in its own language and the brand names of puzzle makers. -->
     <string name="app_name" translatable="false">Piece Counter</string>
@@ -14,17 +14,14 @@
     <string name="maker_grafika" translatable="false">Grafika</string>
     <string name="maker_dowdle" translatable="false">Dowdle</string>
 
-    <string name="app_tagline">No more missing pieces</string>
 
     <string name="action_back">Back</string>
     <string name="action_next">Next</string>
     <string name="action_cancel">Cancel</string>
-    <string name="action_delete">Delete</string>
     <string name="action_confirm">Confirm</string>
+    <string name="action_close">Close</string>
 
     <string name="settings">Settings</string>
-
-    <string name="developer_inspector">Developer inspector</string>
 
     <string name="upload_photo">Upload photo</string>
 
@@ -33,6 +30,9 @@
     <string name="start_no_checks">No checks yet</string>
 
     <string name="history_target_counted">Target: %1$,d  |  Counted: %2$,d</string>
+    <string name="history_detail_photo_number">Photo %1$d</string>
+    <string name="history_detail_photo_warned">Kept despite a quality warning</string>
+    <string name="history_detail_photos_unknown">The counts of the single photos were not saved for this check.</string>
 
     <string name="selection_title">Choose size</string>
     <string name="selection_custom_label">Or enter your own number</string>
@@ -107,7 +107,7 @@
     <string name="settings_background_summary">Choose an image and adjust the brightness</string>
     <string name="settings_language_title">Language</string>
     <string name="settings_info_title">About &amp; legal</string>
-    <string name="settings_info_summary">Version, privacy &amp; libraries used</string>
+    <string name="settings_info_summary">Version, privacy &amp; licenses</string>
 
     <string name="language_system_default">System default</string>
 
@@ -121,29 +121,45 @@
     <string name="background_obsidian_edges">Obsidian edges</string>
     <string name="background_dice_board">Dice &amp; board</string>
 
-    <string name="info_title">About PuzzleCounter</string>
+    <string name="info_title">About Piece Counter</string>
     <string name="info_version">Version %1$s (build %2$d)</string>
     <string name="info_version_unknown">Version unknown</string>
     <string name="info_privacy_title">Camera, photos &amp; privacy</string>
-    <string name="info_privacy_text">PuzzleCounter uses the camera (or a photo you pick from your gallery) only to detect and count puzzle pieces. The photos are analyzed directly on your device by a built-in TensorFlow Lite model and are never sent to servers, cloud services or third parties. The most recently analyzed photos are stored only on your device; you can view and delete them in the developer inspector.</string>
+    <string name="info_privacy_text">Piece Counter uses the camera (or a photo you pick from your gallery) only to detect and count puzzle pieces. The photos are analyzed directly on your device by a built-in TensorFlow Lite model and are never sent to servers, cloud services or third parties. A photo is kept on your device only while you look at its analysis and is deleted as soon as you continue, retake it or close the check; only the counts of each check are kept in the history.</string>
+    <string name="info_privacy_services_text">The TensorFlow Lite runtime that runs the model is provided by Google Play services. It may download updates from Google and sends Google technical diagnostics and usage data about itself (for example the device model, the Android and app version, a device identifier, errors and speed), as described in Google\'s privacy policy – but never your photos.</string>
+    <string name="info_privacy_policy_text">The full privacy policy of this app is published on the web:</string>
     <string name="info_developer_title">Developer</string>
     <string name="info_developer_text">Developed as a private project for counting puzzle pieces.</string>
-    <string name="info_open_source_title">Open source &amp; libraries</string>
-    <string name="info_open_source_text">This app is based on open-source technologies such as Jetpack Compose, CameraX and TensorFlow Lite.</string>
-
-    <string name="inspector_delete_title">Delete all scans?</string>
-    <string name="inspector_delete_all">Delete all scans</string>
-    <string name="inspector_delete_text">The saved photos and detections of the last scans will be removed from this device. The history of checks is kept.</string>
-    <string name="inspector_empty">No scans saved yet.</string>
-    <string name="inspector_mode_contours">Contours</string>
-    <string name="inspector_mode_mask">Mask</string>
-    <string name="inspector_mode_original">Original</string>
-    <string name="inspector_measurements">Measurements &amp; metadata</string>
-    <string name="inspector_pieces">Pieces: %1$,d</string>
-    <string name="inspector_overlap_places">Places with overlapping pieces: %1$d</string>
-    <string name="inspector_saved_scan">Saved scan</string>
-    <string name="inspector_image_failed">Image could not be loaded.</string>
-    <string name="inspector_select_scan">Select scan</string>
+    <string name="info_link_open">Open in browser</string>
+    <string name="info_link_failed">No app found to open this link.</string>
+    <string name="info_licenses_title">Licenses &amp; legal notices</string>
+    <string name="info_licenses_intro">Piece Counter is built with open-source software, Google Play services and an object-detection model. Their notices are listed here; the full license texts are at the very end of this page.</string>
+    <string name="info_components_title">Components used</string>
+    <string name="info_component_androidx_name" translatable="false">AndroidX, Jetpack Compose, CameraX, Kotlin, Kotlinx, Guava</string>
+    <string name="info_component_androidx_details" translatable="false">Apache License 2.0 · © The Android Open Source Project, JetBrains s.r.o., Google LLC et al.</string>
+    <string name="info_component_libyuv_name" translatable="false">libyuv (CameraX)</string>
+    <string name="info_component_libyuv_details" translatable="false">BSD 3-Clause License · © The LibYuv Project Authors</string>
+    <string name="info_component_tensorflow_name" translatable="false">TensorFlow Lite</string>
+    <string name="info_component_tensorflow_details" translatable="false">Apache License 2.0 · © The TensorFlow Authors</string>
+    <string name="info_component_play_name" translatable="false">Google Play services</string>
+    <string name="info_component_play_details" translatable="false">Android Software Development Kit License, Google APIs Terms of Service · © Google LLC</string>
+    <string name="info_component_model_name">Object-detection model (Ultralytics YOLO26)</string>
+    <string name="info_component_model_details" translatable="false">GNU Affero General Public License v3.0 (AGPL-3.0) · © Ultralytics Inc.</string>
+    <string name="info_model_title">About the detection model</string>
+    <string name="info_model_text">The model that finds the puzzle pieces in your photos was trained with Ultralytics YOLO (YOLO26) and is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). Ultralytics publishes the license terms and the source code of Ultralytics YOLO here:</string>
+    <string name="info_license_texts_title">License texts</string>
+    <string name="info_license_texts_note">Only the original English wording of a license is legally binding, so the texts below are shown in English in every language.</string>
+    <string name="info_license_apache_title" translatable="false">Apache License 2.0</string>
+    <string name="info_license_apache_subtitle" translatable="false">AndroidX, Jetpack Compose, CameraX, Kotlin, Kotlinx, Guava, TensorFlow</string>
+    <string name="info_license_bsd_title" translatable="false">BSD 3-Clause License</string>
+    <string name="info_license_bsd_subtitle" translatable="false">libyuv</string>
+    <string name="info_license_google_title">Google Play services terms</string>
+    <string name="info_license_google_subtitle" translatable="false">Android Software Development Kit License, Google APIs Terms of Service</string>
+    <string name="info_license_google_text">Google Play services is provided by Google LLC under the Android Software Development Kit License Agreement; the use of the TensorFlow Lite runtime in Google Play services is subject to the Google APIs Terms of Service. Google publishes these terms online, where the current versions can be read:</string>
+    <string name="info_license_agpl_title" translatable="false">GNU Affero General Public License v3.0</string>
+    <string name="info_license_agpl_subtitle" translatable="false">Ultralytics YOLO26</string>
+    <string name="info_license_state_expanded">Expanded</string>
+    <string name="info_license_state_collapsed">Collapsed</string>
 
     <string name="maker_us_standard">US standard</string>
     <string name="maker_various">Various brands</string>
@@ -160,6 +176,10 @@
     <plurals name="history_entry_title">
         <item quantity="one">Puzzle with %,d piece</item>
         <item quantity="other">Puzzle with %,d pieces</item>
+    </plurals>
+    <plurals name="history_detail_photos">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
     </plurals>
     <plurals name="instruction_several_piles">
         <item quantity="one">Split the puzzle into %1$d pile of about the same size (about %2$d pieces per photo).</item>

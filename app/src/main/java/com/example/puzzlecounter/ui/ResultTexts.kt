@@ -80,6 +80,13 @@ internal fun analyseResult(target: Int, counted: Int, photos: Int): ResultAnalys
 internal fun historyOutcome(target: Int, counted: Int): Outcome =
     analyseResult(target, counted, PuzzleViewModel.pilesFor(target)).outcome
 
+/**
+ * The texts of an earlier check, the same its result screen showed (the places where the number was estimated are
+ * only known if the numbers of its photos were kept).
+ */
+internal fun resultTextsOf(entry: PuzzleHistoryEntry): ResultTexts =
+    resultTexts(entry.target, entry.actual, entry.clusters, PuzzleViewModel.pilesFor(entry.target))
+
 /** A number with its name, shown next to the others on the result screen: the entered, the scanned, the possible one. */
 internal class ResultFigure(
     val label: UiText,

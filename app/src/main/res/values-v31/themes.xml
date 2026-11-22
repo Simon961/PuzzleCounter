@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Android 12 and newer show their own splash screen (the app icon) while the app starts. It is dark like the
+         app, and it is all there is: the app has no splash screen of its own that makes the user wait. -->
+    <style name="Theme.PuzzleCounter" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:windowSplashScreenBackground">@color/window_background</item>
+    </style>
+</resources>

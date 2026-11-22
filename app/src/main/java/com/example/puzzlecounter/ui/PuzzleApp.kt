@@ -13,17 +13,26 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 
 enum class PuzzleScreen {
-    Splash, Start, Selection, Instruction, PhotoFrame, Capture, Result, Debug, Settings, SettingsBackground, SettingsInfo
+    Start, Selection, Instruction, PhotoFrame, Capture, Result, HistoryDetail, Settings, SettingsBackground, SettingsInfo
 }
 
 /** Opens [screen]; tapping a button twice in a row does not open it twice. */
 private fun NavController.open(screen: PuzzleScreen) = navigate(screen.name) { launchSingleTop = true }
+
+/** The details of a check of the history, which is told apart by the time it was made. */
+private const val HISTORY_DETAIL_DATE = "date"
+private val HISTORY_DETAIL_ROUTE = "${PuzzleScreen.HistoryDetail.name}/{$HISTORY_DETAIL_DATE}"
+
+private fun NavController.openHistoryDetail(entry: PuzzleHistoryEntry) =
+    navigate("${PuzzleScreen.HistoryDetail.name}/${entry.date}") { launchSingleTop = true }
 
 @Composable
 fun PuzzleApp(viewModel: PuzzleViewModel = viewModel()) {
@@ -35,7 +44,7 @@ fun PuzzleApp(viewModel: PuzzleViewModel = viewModel()) {
 
     NavHost(
         navController = navController,
-        startDestination = PuzzleScreen.Splash.name,
+        startDestination = PuzzleScreen.Start.name,
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
@@ -52,21 +61,11 @@ fun PuzzleApp(viewModel: PuzzleViewModel = viewModel()) {
             fadeOut(animationSpec = tween(300)) + slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(300))
         }
     ) {
-        composable(PuzzleScreen.Splash.name) {
-            SplashScreen(
-                uiState = uiState,
-                onTimeout = {
-                    navController.navigate(PuzzleScreen.Start.name) {
-                        popUpTo(PuzzleScreen.Splash.name) { inclusive = true }
-                    }
-                }
-            )
-        }
         composable(PuzzleScreen.Start.name) {
             StartScreen(
                 uiState = uiState,
                 onStartClicked = { navController.open(PuzzleScreen.Selection) },
-                onDebugClicked = { navController.open(PuzzleScreen.Debug) },
+                onEntryClicked = { entry -> navController.openHistoryDetail(entry) },
                 onSettingsClicked = { navController.open(PuzzleScreen.Settings) }
             )
         }
@@ -127,9 +126,10 @@ fun PuzzleApp(viewModel: PuzzleViewModel = viewModel()) {
             )
         }
         composable(PuzzleScreen.Result.name) {
+            // However the result is left (the X or going back), the check ends: its photos are deleted, its counts stay.
             ResultScreen(
                 uiState = uiState,
-                onRestart = {
+                onClose = {
                     viewModel.reset()
                     navController.navigate(PuzzleScreen.Start.name) {
                         popUpTo(PuzzleScreen.Start.name) { inclusive = true }
@@ -137,11 +137,18 @@ fun PuzzleApp(viewModel: PuzzleViewModel = viewModel()) {
                 }
             )
         }
-        composable(PuzzleScreen.Debug.name) {
-            DeveloperDebugScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() }
-            )
+        composable(
+            route = HISTORY_DETAIL_ROUTE,
+            arguments = listOf(navArgument(HISTORY_DETAIL_DATE) { type = NavType.LongType })
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getLong(HISTORY_DETAIL_DATE)
+            val entry = uiState.history.firstOrNull { it.date == date }
+            if (entry != null) {
+                HistoryDetailScreen(uiState = uiState, entry = entry, onClose = { navController.popBackStack() })
+            } else {
+                // The check is not in the history (any more): there is nothing to show.
+                LaunchedEffect(Unit) { navController.popBackStack() }
+            }
         }
         composable(PuzzleScreen.Settings.name) {
             SettingsScreen(

@@ -41,8 +41,8 @@ import kotlin.math.roundToInt
 /** A background image of the app; [id] is the stable name under which the choice is saved. */
 data class AppBackgroundItem(
     val id: String,
-    @StringRes val titleRes: Int,
-    @DrawableRes val drawableRes: Int,
+    @param:StringRes val titleRes: Int,
+    @param:DrawableRes val drawableRes: Int,
 )
 
 val availableBackgrounds = listOf(
@@ -103,8 +103,7 @@ fun SettingsScreen(
                 ) {
                     Column {
                         ListItem(
-                            modifier = Modifier.clickable { onNavigateToBackground() },
-                            headlineContent = { Text(stringResource(R.string.settings_background_title), fontWeight = FontWeight.Bold) },
+                            onClick = onNavigateToBackground,
                             supportingContent = { Text(stringResource(R.string.settings_background_summary)) },
                             leadingContent = {
                                 Icon(Icons.Rounded.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -113,13 +112,14 @@ fun SettingsScreen(
                                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                        )
+                        ) {
+                            Text(stringResource(R.string.settings_background_title), fontWeight = FontWeight.Bold)
+                        }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                         ListItem(
-                            modifier = Modifier.clickable { chooseLanguage = true },
-                            headlineContent = { Text(stringResource(R.string.settings_language_title), fontWeight = FontWeight.Bold) },
+                            onClick = { chooseLanguage = true },
                             supportingContent = { Text(stringResource(currentLanguage.nameRes)) },
                             leadingContent = {
                                 Icon(Icons.Rounded.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -128,13 +128,14 @@ fun SettingsScreen(
                                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                        )
+                        ) {
+                            Text(stringResource(R.string.settings_language_title), fontWeight = FontWeight.Bold)
+                        }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                         ListItem(
-                            modifier = Modifier.clickable { onNavigateToInfo() },
-                            headlineContent = { Text(stringResource(R.string.settings_info_title), fontWeight = FontWeight.Bold) },
+                            onClick = onNavigateToInfo,
                             supportingContent = { Text(stringResource(R.string.settings_info_summary)) },
                             leadingContent = {
                                 Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -143,7 +144,9 @@ fun SettingsScreen(
                                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                        )
+                        ) {
+                            Text(stringResource(R.string.settings_info_title), fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -199,20 +202,23 @@ fun BackgroundSettingsScreen(uiState: PuzzleUiState, viewModel: PuzzleViewModel,
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(stringResource(R.string.background_brightness), fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.background_brightness), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             Text(stringResource(R.string.background_brightness_value, brightnessPercent), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
 
+                        // The slider with a callback is controlled: it only reports the drag (onValueChange) and shows what
+                        // its state says, so the state has to follow the value of the app, or the thumb would not move.
+                        val brightnessState = rememberSliderState(value = uiState.backgroundBrightness, trackRange = 0.1f..1.0f)
+                        brightnessState.value = uiState.backgroundBrightness
                         Slider(
-                            value = uiState.backgroundBrightness,
+                            state = brightnessState,
                             onValueChange = { viewModel.updateBackgroundBrightness(it) },
-                            valueRange = 0.1f..1.0f,
                             modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(Modifier.height(32.dp))
 
-                        Text(stringResource(R.string.background_title), fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.background_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(16.dp))
 
                         LazyRow(

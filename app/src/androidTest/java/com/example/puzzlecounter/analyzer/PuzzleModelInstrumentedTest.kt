@@ -52,22 +52,15 @@ class PuzzleModelInstrumentedTest {
         val photo = TestImages.fakePuzzlePhoto()
         try {
             val result = TFLitePieceDetector(model).detectPieces(photo)
-            try {
-                // Whether the model recognizes the drawn placeholders is not the point: the pipeline
-                // must finish and hand back a consistent, usable result.
-                assertFalse(result.maskImage.isRecycled)
-                assertEquals(photo.width, result.maskImage.width)
-                assertEquals(photo.height, result.maskImage.height)
-                assertEquals(result.pieces.sumOf { it.pieceCount }, result.pieceCount)
-                assertEquals(result.pieces.count { it.pieceCount > 1 }, result.clusterCount)
-                result.pieces.forEach { piece ->
-                    assertTrue("Fläche muss positiv sein", piece.area > 0)
-                    assertTrue("Konfidenz im Bereich 0..1", piece.score in 0f..1f)
-                    assertTrue("Eine Erkennung steht für keines (Teil einer größeren) oder mehrere Teile", piece.pieceCount >= 0)
-                    assertFalse("Box darf nicht leer sein", piece.rect.isEmpty)
-                }
-            } finally {
-                result.maskImage.recycle()
+            // Whether the model recognizes the drawn placeholders is not the point: the pipeline
+            // must finish and hand back a consistent, usable result.
+            assertEquals(result.pieces.sumOf { it.pieceCount }, result.pieceCount)
+            assertEquals(result.pieces.count { it.pieceCount > 1 }, result.clusterCount)
+            result.pieces.forEach { piece ->
+                assertTrue("Fläche muss positiv sein", piece.area > 0)
+                assertTrue("Konfidenz im Bereich 0..1", piece.score in 0f..1f)
+                assertTrue("Eine Erkennung steht für keines (Teil einer größeren) oder mehrere Teile", piece.pieceCount >= 0)
+                assertFalse("Box darf nicht leer sein", piece.rect.isEmpty)
             }
         } finally {
             photo.recycle()

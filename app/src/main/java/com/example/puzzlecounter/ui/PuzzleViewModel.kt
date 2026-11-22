@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -34,13 +35,19 @@ import kotlin.math.roundToInt
  * also kept in [savedState]: Android may end the process of an app that is in the background - while the user lays
  * out the pieces of the next pile, for example - and the check must then go on where it was, not start over or, worse,
  * finish with an empty state.
+ *
+ * The photos of a check are not kept: a photo is analysed in memory, its preview (see [ScanPhotoStore]) exists only
+ * while the user looks at it, and what a check keeps are the numbers of its photos.
+ *
+ * The default view model factory creates the class with `(Application, SavedStateHandle)`, which is the overload
+ * that [JvmOverloads] generates; tests hand in their own [ScanPhotoStore] as the third parameter.
  */
 class PuzzleViewModel @JvmOverloads constructor(
     application: Application,
-    private val savedState: SavedStateHandle = SavedStateHandle(),
+    private val savedState: SavedStateHandle,
+    private val photoStore: ScanPhotoStore = ScanPhotoStore(application),
 ) : AndroidViewModel(application) {
     private val historyManager = HistoryManager(application)
-    private val debugManager = DebugManager(application)
     private val settingsManager = SettingsManager(application)
 
     // The TFLite model is not thread-safe: it is created, used and closed on this one thread only.
@@ -48,15 +55,26 @@ class PuzzleViewModel @JvmOverloads constructor(
     private val modelDispatcher = modelExecutor.asCoroutineDispatcher()
     private var model: PuzzleModel? = null // only touched on modelDispatcher
 
+    /**
+     * Counts the checks that were discarded. An analysis that finishes after its check was discarded (see
+     * [discardCheck]) must neither change the state of the next check nor leave its photo behind.
+     */
+    private val checkGeneration = AtomicInteger()
+
     private val _uiState = MutableStateFlow(restoredSessionState())
     val uiState: StateFlow<PuzzleUiState> = _uiState.asStateFlow()
 
-    /** A state without any scan progress; settings, history and debug sessions are loaded from storage. */
+    init {
+        // What a process that was ended in the middle of a check left behind (no check is running yet, and the model
+        // thread, on which every analysis runs, does this first).
+        viewModelScope.launch(modelDispatcher) { photoStore.clear() }
+    }
+
+    /** A state without any scan progress; settings and history are loaded from storage. */
     private fun newSessionState() = PuzzleUiState(
         selectedBackgroundId = settingsManager.getBackgroundId(),
         backgroundBrightness = settingsManager.getBackgroundBrightness(),
         history = historyManager.getHistory(),
-        debugSessions = debugManager.getSessions()
     )
 
     /** The state at the start: the check that was in progress when the system ended the process, if there was one. */
@@ -66,8 +84,7 @@ class PuzzleViewModel @JvmOverloads constructor(
             targetPieceCount = target,
             calculatedPiles = savedState.get<Int>(KEY_PILES) ?: 1,
             currentPileIndex = savedState.get<Int>(KEY_PILE) ?: 1,
-            countedPieces = savedState.get<Int>(KEY_COUNTED_PIECES) ?: 0,
-            countedClusters = savedState.get<Int>(KEY_COUNTED_CLUSTERS) ?: 0,
+            photos = decodePhotoCounts(savedState.get<String>(KEY_PHOTOS)).orEmpty(),
         )
     }
 
@@ -76,8 +93,7 @@ class PuzzleViewModel @JvmOverloads constructor(
         savedState[KEY_TARGET] = state.targetPieceCount
         savedState[KEY_PILES] = state.calculatedPiles
         savedState[KEY_PILE] = state.currentPileIndex
-        savedState[KEY_COUNTED_PIECES] = state.countedPieces
-        savedState[KEY_COUNTED_CLUSTERS] = state.countedClusters
+        savedState[KEY_PHOTOS] = state.photos.encode()
     }
 
     fun updateBackgroundId(id: Int) {
@@ -106,8 +122,9 @@ class PuzzleViewModel @JvmOverloads constructor(
         }
     }
 
-    /** Starts a new puzzle check; progress of a previous one is discarded. */
+    /** Starts a new puzzle check; progress of a previous one (and its photos) is discarded. */
     fun setTargetPieceCount(count: Int) {
+        discardCheck()
         _uiState.value = newSessionState().copy(targetPieceCount = count, calculatedPiles = pilesFor(count)).also(::keepCheck)
     }
 
@@ -149,53 +166,75 @@ class PuzzleViewModel @JvmOverloads constructor(
      * is told the edge length of the model input, which is the size the photo is wanted in.
      */
     private fun analyzePhoto(fromGallery: Boolean, photo: (modelSize: Int) -> Bitmap) {
+        val generation = checkGeneration.get()
+        // A photo that is still under review is replaced by this one (a photo from the gallery is chosen again): its
+        // preview is not needed any more, and its numbers must not be confirmed with the new photo.
+        photoStore.delete(_uiState.value.currentPhotoPath)
         _uiState.update {
-            it.copy(isAnalyzing = true, isReviewingCurrentPhoto = true, currentQualityResult = null, currentPhotoFromGallery = fromGallery)
+            it.copy(
+                isAnalyzing = true,
+                isReviewingCurrentPhoto = true,
+                currentQualityResult = null,
+                currentPhotoPath = null,
+                currentPieces = 0,
+                currentClusters = 0,
+                currentPhotoFromGallery = fromGallery
+            )
         }
 
         viewModelScope.launch(modelDispatcher) {
             var bitmap: Bitmap? = null
             var scaled: Bitmap? = null
-            var detection: DetectionResult? = null
             try {
                 val loaded = loadedModel()
                 bitmap = photo(loaded.inputSize)
                 scaled = scaleDown(bitmap, loaded.inputSize)
-                val result = detect(scaled).also { detection = it }
+                val result = detect(scaled)
                 val quality = ImageQualityChecker().checkQuality(scaled, result.hasHugeStacks, result.typicalPieceEdgeShare)
-                val session = debugManager.saveSession(scaled, result)
-                val sessions = debugManager.getSessions()
+                // The annotated photo doubles as preview of the photo.
+                val previewPath = photoStore.save(scaled, result)
 
-                _uiState.update {
+                val applied = applyAnalysis(generation) {
                     it.copy(
                         isAnalyzing = false,
                         currentQualityResult = quality,
                         currentPieces = result.pieceCount,
                         currentClusters = result.clusterCount,
-                        // The annotated image doubles as preview of the photo.
-                        currentPhotoPath = session.annotPath,
-                        debugSessions = sessions
+                        currentPhotoPath = previewPath
                     )
                 }
+                if (!applied) photoStore.delete(previewPath)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ModelUnavailable) {
                 Log.e(TAG, "Das Modell konnte nicht geladen werden", e)
-                _uiState.update { it.copy(isAnalyzing = false, currentQualityResult = MODEL_UNAVAILABLE) }
+                applyAnalysis(generation) { it.copy(isAnalyzing = false, currentQualityResult = MODEL_UNAVAILABLE) }
             } catch (e: Exception) {
                 Log.e(TAG, "Analyse fehlgeschlagen", e)
-                _uiState.update { it.copy(isAnalyzing = false, currentQualityResult = ANALYSIS_FAILED) }
+                applyAnalysis(generation) { it.copy(isAnalyzing = false, currentQualityResult = ANALYSIS_FAILED) }
             } catch (e: OutOfMemoryError) {
                 Log.e(TAG, "Zu wenig Speicher für die Analyse", e)
-                _uiState.update { it.copy(isAnalyzing = false, currentQualityResult = OUT_OF_MEMORY) }
+                applyAnalysis(generation) { it.copy(isAnalyzing = false, currentQualityResult = OUT_OF_MEMORY) }
             } finally {
                 // Critical memory release
                 // recycle() is safe to call twice (scaled is the original if the photo was small enough)
                 scaled?.recycle()
                 bitmap?.recycle()
-                detection?.maskImage?.recycle()
             }
         }
+    }
+
+    /**
+     * Changes the state to what the analysis of a photo came to - unless the check the photo belongs to was discarded
+     * meanwhile, whose state is gone. Returns whether the state was changed.
+     */
+    private fun applyAnalysis(generation: Int, change: (PuzzleUiState) -> PuzzleUiState): Boolean {
+        var applied = false
+        _uiState.update {
+            applied = generation == checkGeneration.get()
+            if (applied) change(it) else it
+        }
+        return applied
     }
 
     /**
@@ -233,7 +272,9 @@ class PuzzleViewModel @JvmOverloads constructor(
         }
     }
 
+    /** The photo under review is dropped (to take or choose another one): its preview is deleted. */
     fun retakePhoto() {
+        photoStore.delete(_uiState.value.currentPhotoPath)
         _uiState.update {
             it.copy(
                 isReviewingCurrentPhoto = false,
@@ -246,18 +287,26 @@ class PuzzleViewModel @JvmOverloads constructor(
         }
     }
 
-    /** Adds the pieces of the current photo to the count; after the last pile the result is saved. */
+    /**
+     * Adds the pieces of the current photo to the count and deletes its preview (the numbers are all a check keeps of
+     * a photo); after the last pile the result is saved.
+     */
     fun confirmPhoto() {
         val state = _uiState.value
-        if (state.currentPhotoPath == null) return // nothing analysed yet
+        val previewPath = state.currentPhotoPath ?: return // nothing analysed yet
+        photoStore.delete(previewPath)
 
-        val countedPieces = state.countedPieces + state.currentPieces
+        val photos = state.photos + PhotoCount(
+            pieces = state.currentPieces,
+            clusters = state.currentClusters,
+            // "continue anyway" on a photo that the analysis advised against
+            warned = state.currentQualityResult?.isAcceptable == false
+        )
         val nextPileIndex = state.currentPileIndex + 1
 
         _uiState.update {
             it.copy(
-                countedPieces = countedPieces,
-                countedClusters = state.countedClusters + state.currentClusters,
+                photos = photos,
                 currentPileIndex = nextPileIndex,
                 isReviewingCurrentPhoto = false,
                 currentPhotoPath = null,
@@ -270,38 +319,45 @@ class PuzzleViewModel @JvmOverloads constructor(
         keepCheck(_uiState.value)
 
         if (nextPileIndex > state.calculatedPiles) {
-            saveResultToHistory(countedPieces, state.targetPieceCount)
+            saveResultToHistory(photos, state.targetPieceCount)
         }
     }
 
-    private fun saveResultToHistory(actual: Int, target: Int) {
+    private fun saveResultToHistory(photos: List<PhotoCount>, target: Int) {
         historyManager.saveHistory(
             PuzzleHistoryEntry(
                 // Not shown: the title of an entry is made from its target in the language of the app.
                 name = "Puzzle $target",
                 date = System.currentTimeMillis(),
                 target = target,
-                actual = actual
+                actual = photos.sumOf { it.pieces },
+                photos = photos
             )
         )
         val history = historyManager.getHistory()
         _uiState.update { it.copy(history = history) }
     }
 
-    fun clearDebugSessions() {
-        debugManager.clearAll()
-        _uiState.update { it.copy(debugSessions = emptyList()) }
-    }
-
+    /**
+     * Ends the check, which the user does by closing the result (or by going back from it): the progress is
+     * discarded together with every photo of it, and the history keeps the counts.
+     */
     fun reset() {
+        discardCheck()
         _uiState.value = newSessionState()
         savedState.keys().toList().forEach { savedState.remove<Any>(it) }
     }
 
+    /** Deletes every photo of the check and makes analyses that are still running leave the next check alone. */
+    private fun discardCheck() {
+        checkGeneration.incrementAndGet()
+        photoStore.clear()
+    }
+
     override fun onCleared() {
-        super.onCleared()
         // Close the model on its owning thread, after any running analysis has finished.
         modelExecutor.execute {
+            photoStore.clear() // the app is closed: no check goes on
             try {
                 model?.close()
             } catch (e: Exception) {
@@ -325,8 +381,7 @@ class PuzzleViewModel @JvmOverloads constructor(
         private const val KEY_TARGET = "target"
         private const val KEY_PILES = "piles"
         private const val KEY_PILE = "pile"
-        private const val KEY_COUNTED_PIECES = "countedPieces"
-        private const val KEY_COUNTED_CLUSTERS = "countedClusters"
+        private const val KEY_PHOTOS = "photos"
 
         private val ANALYSIS_FAILED = QualityResult(PhotoIssue.ANALYSIS_FAILED)
 

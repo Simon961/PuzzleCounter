@@ -21,11 +21,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Construction
-import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Settings
@@ -51,11 +50,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puzzlecounter.R
-import kotlinx.coroutines.delay
 import kotlin.math.ceil
 import java.text.DateFormat
 import java.util.Date
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun AppBackground(uiState: PuzzleUiState, content: @Composable () -> Unit) {
@@ -75,44 +72,9 @@ fun AppBackground(uiState: PuzzleUiState, content: @Composable () -> Unit) {
     }
 }
 
-@Composable
-fun SplashScreen(uiState: PuzzleUiState, onTimeout: () -> Unit) {
-    LaunchedEffect(Unit) {
-        delay(2.seconds)
-        onTimeout()
-    }
-    AppBackground(uiState = uiState) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Extension,
-                contentDescription = null,
-                modifier = Modifier.size(100.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.height(24.dp))
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.app_tagline),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClicked: () -> Unit, onSettingsClicked: () -> Unit) {
+fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onEntryClicked: (PuzzleHistoryEntry) -> Unit, onSettingsClicked: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     AppBackground(uiState = uiState) {
@@ -127,12 +89,6 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                             onSettingsClicked()
                         }) {
                             Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        IconButton(onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            onDebugClicked()
-                        }) {
-                            Icon(Icons.Rounded.Construction, contentDescription = stringResource(R.string.developer_inspector))
                         }
                     }
                 )
@@ -182,7 +138,12 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                         items(uiState.history) { entry ->
                             // the same judgement as on the result screen, so that the history does not contradict it
                             val outcome = remember(entry.target, entry.actual) { historyOutcome(entry.target, entry.actual) }
+                            // A tap opens everything the check found out (see HistoryDetailScreen).
                             ElevatedCard(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onEntryClicked(entry)
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
                                 shape = RoundedCornerShape(20.dp)
@@ -238,6 +199,12 @@ fun StartScreen(uiState: PuzzleUiState, onStartClicked: () -> Unit, onDebugClick
                                             modifier = Modifier.padding(12.dp).size(24.dp)
                                         )
                                     }
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.padding(start = 4.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    )
                                 }
                             }
                         }

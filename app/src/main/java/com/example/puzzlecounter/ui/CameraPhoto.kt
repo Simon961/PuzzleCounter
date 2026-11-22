@@ -3,10 +3,7 @@ package com.example.puzzlecounter.ui
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.Rect
-import android.util.Log
 import androidx.camera.core.ImageProxy
-
-private const val TAG = "CameraPhoto"
 
 /**
  * The photo of a CameraX capture as the upright, square bitmap the app analyses.
@@ -19,7 +16,6 @@ internal fun ImageProxy.toSquareBitmap(): Bitmap {
     val full = toBitmap()
     val rotation = imageInfo.rotationDegrees
     val photo = uprightSquare(full, cropRect, rotation)
-    Log.d(TAG, "Foto ${full.width}x${full.height}, Ausschnitt $cropRect, Drehung $rotation° -> ${photo.width}x${photo.height}")
     if (photo !== full) full.recycle()
     return photo
 }

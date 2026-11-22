@@ -13,3 +13,12 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# personal / tool state
+/.kotlin
+/.idea/claudeCodeTabState.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+*.jks
+*.keystore
+keystore.properties

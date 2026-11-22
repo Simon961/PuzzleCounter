@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spanish texts of Piece Counter. Keep the keys and placeholders the same in every language file (checked by StringResourcesTest). -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <string name="action_back">Atrás</string>
+    <string name="action_next">Siguiente</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_confirm">Confirmar</string>
+    <string name="action_close">Cerrar</string>
+
+    <string name="settings">Ajustes</string>
+
+    <string name="upload_photo">Subir foto</string>
+
+    <string name="start_new_check">Revisar un puzle nuevo</string>
+    <string name="start_recent_checks">Revisiones recientes</string>
+    <string name="start_no_checks">Aún no hay revisiones</string>
+
+    <string name="history_target_counted">Previsto: %1$,d  |  Contado: %2$,d</string>
+    <string name="history_detail_photo_number">Foto %1$d</string>
+    <string name="history_detail_photo_warned">Conservada a pesar de un aviso de calidad</string>
+    <string name="history_detail_photos_unknown">Los recuentos de cada foto no se guardaron para esta revisión.</string>
+
+    <string name="selection_title">Elige el tamaño</string>
+    <string name="selection_custom_label">O introduce otra cantidad</string>
+    <string name="selection_custom_hint">Número de piezas según la caja</string>
+
+    <string name="instruction_title">Instrucciones</string>
+    <string name="instruction_preparation">Preparación</string>
+    <string name="instruction_single_pile">Todas las piezas caben en una foto. Extiéndelas planas, con un poco de espacio entre ellas.</string>
+    <string name="instruction_important">Importante: extiende cada montón completamente plano. Las piezas no deben amontonarse y, si es posible, no deben tocarse.</string>
+    <string name="instruction_square_frame">Solo se fotografía y analiza el recuadro cuadrado. Todas las piezas de un montón deben quedar completamente dentro. También puedes subir una foto existente (icono junto al botón).</string>
+    <string name="instruction_start_scan">Iniciar escáner</string>
+
+    <string name="result_title_complete">¡Perfecto!</string>
+    <string name="result_message_complete">Están todas las piezas.</string>
+    <string name="result_title_missing">¡Atención!</string>
+    <string name="result_hint_missing">Comprueba que todas las piezas estén en la foto: las piezas tapadas por otras o fuera de la foto no se detectan.</string>
+    <string name="result_title_too_many">Más piezas de las esperadas</string>
+    <string name="result_hint_too_many">Posibles motivos: el puzle tiene más piezas de las indicadas, se han mezclado piezas de otro puzle o se han contado piezas dos veces.</string>
+    <string name="result_accuracy_advice">Si quieres estar seguro, separa bien las piezas y vuelve a contar.</string>
+    <string name="result_figure_box">Caja</string>
+    <string name="result_figure_scanned">Escaneadas</string>
+    <string name="result_figure_possible">Posible</string>
+    <string name="result_message_other_size">Has elegido %1$,d. ¿Has seleccionado el tamaño de puzle correcto? Comprueba el número de piezas en la caja.</string>
+    <string name="result_tip_edge_pieces">Para comprobarlo, cuenta las piezas del borde (con las 4 esquinas): en una cuadrícula de %1$s hay %2$d.</string>
+    <string name="result_tip_edge_compare">Para distinguirlos, cuenta las piezas del borde (con las 4 esquinas): %1$d → %3$,d (cuadrícula %2$s), %4$d → %6$,d (cuadrícula %5$s).</string>
+
+    <string name="camera_permission_needed">Para fotografiar las piezas, la app necesita acceso a la cámara.</string>
+    <string name="camera_permission_denied">Se ha denegado el acceso a la cámara. Puedes permitirlo en los ajustes de la app.</string>
+    <string name="camera_permission_grant">Conceder permiso</string>
+    <string name="camera_permission_open_settings">Abrir ajustes</string>
+
+    <string name="upload_photo_instead">Subir una foto</string>
+
+    <string name="camera_failed">No se ha podido iniciar la cámara. Puedes subir una foto (icono abajo a la izquierda).</string>
+
+    <string name="capture_failed">No se ha podido hacer la foto. Inténtalo de nuevo.</string>
+    <string name="capture_pile_progress">Montón %1$d / %2$d</string>
+    <string name="capture_single_photo">Todas las piezas en una foto</string>
+
+    <string name="torch_on">Encender linterna</string>
+    <string name="torch_off">Apagar linterna</string>
+
+    <string name="take_photo">Hacer foto</string>
+
+    <string name="review_photo_description">Foto analizada</string>
+
+    <string name="analyzing_photo">Analizando la foto…</string>
+    <string name="analyzing_pile">Analizando el montón %1$d de %2$d…</string>
+
+    <string name="action_confirm_continue">Confirmar y seguir</string>
+    <string name="action_choose_other_photo">Elegir otra foto</string>
+    <string name="action_retake">Repetir foto</string>
+    <string name="action_choose_other_photo_recommended">Elegir otra foto (recomendado)</string>
+    <string name="action_retake_recommended">Repetir foto (recomendado)</string>
+    <string name="action_continue_anyway">Continuar igualmente</string>
+
+    <string name="issue_too_dark">¡Demasiado oscuro! Añade más luz.</string>
+    <string name="issue_overexposed">¡Foto sobreexpuesta! Evita la luz deslumbrante.</string>
+    <string name="issue_blurry">¡La foto está borrosa! Vuelve a hacerla con el pulso firme o elige una foto más nítida.</string>
+    <string name="issue_pieces_too_small">¡Las piezas se ven demasiado pequeñas para contarlas con fiabilidad! Acércate al montón o pon menos piezas en cada foto.</string>
+    <string name="issue_stacked">¡Hay piezas unas encima de otras! Extiéndelas planas, una al lado de otra.</string>
+    <string name="issue_analysis_failed">El análisis ha fallado. Inténtalo de nuevo con otra foto.</string>
+    <string name="issue_model_unavailable">No se ha podido iniciar el reconocimiento de imágenes. Comprueba que los servicios de Google Play estén actualizados y que haya conexión a internet la primera vez, y vuelve a intentarlo.</string>
+    <string name="issue_out_of_memory">No hay suficiente memoria libre para el análisis. Cierra otras apps e inténtalo de nuevo.</string>
+
+    <string name="frame_title">Ajustar foto</string>
+    <string name="frame_open_failed">No se ha podido abrir la foto.</string>
+    <string name="frame_instructions">Mueve la foto y haz zoom con dos dedos hasta que todas las piezas queden dentro del cuadrado. Solo se cuenta lo que se ve en el cuadrado.</string>
+    <string name="frame_square_description">Cuadrado: mueve y amplía la foto</string>
+
+    <string name="settings_background_title">Fondo y aspecto</string>
+    <string name="settings_background_summary">Elige una imagen y ajusta el brillo</string>
+    <string name="settings_language_title">Idioma</string>
+    <string name="settings_info_title">Información y legal</string>
+    <string name="settings_info_summary">Versión, privacidad y licencias</string>
+
+    <string name="language_system_default">Predeterminado del sistema</string>
+
+    <string name="background_title">Imagen de fondo</string>
+    <string name="background_appearance">Aspecto</string>
+    <string name="background_brightness">Brillo</string>
+    <string name="background_brightness_value">%1$d %%</string>
+    <string name="background_selected">Seleccionado</string>
+    <string name="background_cyber_indigo">Índigo cibernético</string>
+    <string name="background_tech_symmetry">Simetría tecnológica</string>
+    <string name="background_obsidian_edges">Aristas de obsidiana</string>
+    <string name="background_dice_board">Dados y tablero</string>
+
+    <string name="info_title">Acerca de Piece Counter</string>
+    <string name="info_version">Versión %1$s (compilación %2$d)</string>
+    <string name="info_version_unknown">Versión desconocida</string>
+    <string name="info_privacy_title">Cámara, fotos y privacidad</string>
+    <string name="info_privacy_text">Piece Counter usa la cámara (o una foto que elijas de tu galería) solo para detectar y contar piezas de puzle. Las fotos se analizan directamente en tu dispositivo con un modelo integrado de TensorFlow Lite y nunca se envían a servidores, servicios en la nube ni a terceros. Una foto solo permanece en tu dispositivo mientras ves su análisis y se borra en cuanto continúas, la repites o cierras la revisión; en el historial solo se guardan los recuentos de cada revisión.</string>
+    <string name="info_privacy_services_text">El entorno de ejecución de TensorFlow Lite que ejecuta el modelo lo proporcionan los servicios de Google Play. Puede descargar actualizaciones de Google y envía a Google datos técnicos de diagnóstico y de uso sobre sí mismo (por ejemplo, el modelo del dispositivo, la versión de Android y de la app, un identificador del dispositivo, errores y velocidad), tal como se describe en la política de privacidad de Google, pero nunca tus fotos.</string>
+    <string name="info_privacy_policy_text">La política de privacidad completa de esta app está publicada en la web:</string>
+    <string name="info_developer_title">Desarrollo</string>
+    <string name="info_developer_text">Desarrollada como proyecto personal para contar piezas de puzle.</string>
+    <string name="info_link_open">Abrir en el navegador</string>
+    <string name="info_link_failed">No se encontró ninguna app para abrir este enlace.</string>
+    <string name="info_licenses_title">Licencias y avisos legales</string>
+    <string name="info_licenses_intro">Piece Counter está construida con software de código abierto, los servicios de Google Play y un modelo de detección de objetos. Aquí figuran sus avisos; los textos completos de las licencias están al final de esta página.</string>
+    <string name="info_components_title">Componentes utilizados</string>
+    <string name="info_component_model_name">Modelo de detección de objetos (Ultralytics YOLO26)</string>
+    <string name="info_model_title">Sobre el modelo de detección</string>
+    <string name="info_model_text">El modelo que encuentra las piezas de puzle en tus fotos se entrenó con Ultralytics YOLO (YOLO26) y tiene la licencia GNU Affero General Public License v3.0 (AGPL-3.0). Ultralytics publica aquí las condiciones de la licencia y el código fuente de Ultralytics YOLO:</string>
+    <string name="info_license_texts_title">Textos de las licencias</string>
+    <string name="info_license_texts_note">Solo el texto original en inglés de una licencia es jurídicamente vinculante, por eso los textos siguientes se muestran en inglés en todos los idiomas.</string>
+    <string name="info_license_google_title">Condiciones de los servicios de Google Play</string>
+    <string name="info_license_google_text">Los servicios de Google Play los proporciona Google LLC conforme al Android Software Development Kit License Agreement; el uso del entorno de ejecución de TensorFlow Lite en los servicios de Google Play está sujeto a los Google APIs Terms of Service. Google publica estas condiciones en línea, donde se pueden consultar las versiones vigentes:</string>
+    <string name="info_license_state_expanded">Expandido</string>
+    <string name="info_license_state_collapsed">Contraído</string>
+
+    <string name="maker_us_standard">Estándar de EE. UU.</string>
+    <string name="maker_various">Varias marcas</string>
+
+    <!-- Plurals: the number that selects the form is also inserted as %d. -->
+    <plurals name="pieces_word" tools:ignore="ImpliedQuantity">
+        <item quantity="one">pieza</item>
+        <item quantity="many">piezas</item>
+        <item quantity="other">piezas</item>
+    </plurals>
+    <plurals name="pieces_count">
+        <item quantity="one">%,d pieza</item>
+        <item quantity="many">%,d piezas</item>
+        <item quantity="other">%,d piezas</item>
+    </plurals>
+    <plurals name="history_entry_title">
+        <item quantity="one">Puzle de %,d pieza</item>
+        <item quantity="many">Puzle de %,d piezas</item>
+        <item quantity="other">Puzle de %,d piezas</item>
+    </plurals>
+    <plurals name="history_detail_photos">
+        <item quantity="one">%d foto</item>
+        <item quantity="many">%d fotos</item>
+        <item quantity="other">%d fotos</item>
+    </plurals>
+    <plurals name="instruction_several_piles">
+        <item quantity="one">Divide el puzle en %1$d montón de tamaño similar (unas %2$d piezas por foto).</item>
+        <item quantity="many">Divide el puzle en %1$d montones de tamaño similar (unas %2$d piezas por foto).</item>
+        <item quantity="other">Divide el puzle en %1$d montones de tamaño similar (unas %2$d piezas por foto).</item>
+    </plurals>
+    <plurals name="result_message_missing">
+        <item quantity="one">Falta %,d pieza.</item>
+        <item quantity="many">Faltan %,d piezas.</item>
+        <item quantity="other">Faltan %,d piezas.</item>
+    </plurals>
+    <plurals name="result_message_too_many">
+        <item quantity="one">Se ha contado %,d pieza más de las indicadas.</item>
+        <item quantity="many">Se han contado %,d piezas más de las indicadas.</item>
+        <item quantity="other">Se han contado %,d piezas más de las indicadas.</item>
+    </plurals>
+    <plurals name="result_estimate">
+        <item quantity="one">En %d punto había piezas superpuestas o en contacto: ahí el número es una estimación. Para un resultado exacto, separa bien las piezas.</item>
+        <item quantity="many">En %d puntos había piezas superpuestas o en contacto: ahí el número es una estimación. Para un resultado exacto, separa bien las piezas.</item>
+        <item quantity="other">En %d puntos había piezas superpuestas o en contacto: ahí el número es una estimación. Para un resultado exacto, separa bien las piezas.</item>
+    </plurals>
+    <plurals name="result_accuracy_missing">
+        <item quantity="one">La diferencia está dentro del margen de precisión del recuento (unas ±%d pieza): puede que no falte nada.</item>
+        <item quantity="many">La diferencia está dentro del margen de precisión del recuento (unas ±%d piezas): puede que no falte nada.</item>
+        <item quantity="other">La diferencia está dentro del margen de precisión del recuento (unas ±%d piezas): puede que no falte nada.</item>
+    </plurals>
+    <plurals name="result_accuracy_too_many">
+        <item quantity="one">La diferencia está dentro del margen de precisión del recuento (unas ±%d pieza): puede que no haya más piezas de las indicadas.</item>
+        <item quantity="many">La diferencia está dentro del margen de precisión del recuento (unas ±%d piezas): puede que no haya más piezas de las indicadas.</item>
+        <item quantity="other">La diferencia está dentro del margen de precisión del recuento (unas ±%d piezas): puede que no haya más piezas de las indicadas.</item>
+    </plurals>
+    <plurals name="review_estimated_places">
+        <item quantity="one">%d punto con piezas superpuestas: ahí es una estimación</item>
+        <item quantity="many">%d puntos con piezas superpuestas: ahí es una estimación</item>
+        <item quantity="other">%d puntos con piezas superpuestas: ahí es una estimación</item>
+    </plurals>
+    <plurals name="result_scanned">
+        <item quantity="one">%,d pieza escaneada</item>
+        <item quantity="many">%,d piezas escaneadas</item>
+        <item quantity="other">%,d piezas escaneadas</item>
+    </plurals>
+    <plurals name="result_title_exact_variant">
+        <item quantity="one">Tu puzle podría contener %,d pieza</item>
+        <item quantity="many">Tu puzle podría contener %,d piezas</item>
+        <item quantity="other">Tu puzle podría contener %,d piezas</item>
+    </plurals>
+    <plurals name="result_message_exact_variant">
+        <item quantity="one">En la caja pone %1$,d, pero esa cifra suele estar redondeada: algunos puzles tienen exactamente %2$,d pieza. Vuelve a leer con atención el número de piezas en la caja.</item>
+        <item quantity="many">En la caja pone %1$,d, pero esa cifra suele estar redondeada: algunos puzles tienen exactamente %2$,d piezas. Vuelve a leer con atención el número de piezas en la caja.</item>
+        <item quantity="other">En la caja pone %1$,d, pero esa cifra suele estar redondeada: algunos puzles tienen exactamente %2$,d piezas. Vuelve a leer con atención el número de piezas en la caja.</item>
+    </plurals>
+    <plurals name="result_title_other_size">
+        <item quantity="one">Coincide con un puzle de %,d pieza</item>
+        <item quantity="many">Coincide con un puzle de %,d piezas</item>
+        <item quantity="other">Coincide con un puzle de %,d piezas</item>
+    </plurals>
+    <plurals name="result_note_larger_variant">
+        <item quantity="one">Nota: algunos puzles con la indicación %1$,d tienen en realidad %2$,d pieza. En ese caso faltarían %3$d.</item>
+        <item quantity="many">Nota: algunos puzles con la indicación %1$,d tienen en realidad %2$,d piezas. En ese caso faltarían %3$d.</item>
+        <item quantity="other">Nota: algunos puzles con la indicación %1$,d tienen en realidad %2$,d piezas. En ese caso faltarían %3$d.</item>
+    </plurals>
+</resources>

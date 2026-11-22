@@ -50,6 +50,7 @@ import androidx.compose.material.icons.rounded.NoPhotography
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -128,14 +129,21 @@ fun CaptureScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Only the live view needs the camera: a photo from the gallery is reviewed without asking for it.
-    LaunchedEffect(uiState.isReviewingCurrentPhoto) {
-        if (!hasCameraPermission && !uiState.isReviewingCurrentPhoto) {
+    // Only the live view needs the camera. The question is asked once, when the screen is opened to scan; it is not
+    // asked again whenever the review of a photo ends - a photo from the gallery is reviewed and confirmed without the
+    // camera, and after the last photo the check is over. Without the permission the screen offers it with a button.
+    val checkFinished = uiState.isFinished
+    var askedForCamera by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (shouldAskForCamera(hasCameraPermission, uiState.isReviewingCurrentPhoto, checkFinished, askedForCamera)) {
+            askedForCamera = true
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
     when {
+        // The last photo was confirmed and the result is on its way: neither the camera nor its permission is wanted.
+        checkFinished -> Box(modifier = Modifier.fillMaxSize().background(Color.Black))
         // Also while analyzing: the photo path is only known once the analysis has finished.
         uiState.isReviewingCurrentPhoto -> PhotoReview(uiState, onRetake, onConfirm, onPickPhoto)
         !hasCameraPermission -> CameraPermissionRequest(
@@ -153,6 +161,14 @@ fun CaptureScreen(
         else -> LiveCamera(uiState, onPhotoCaptured, onPickPhoto)
     }
 }
+
+/**
+ * Whether the screen asks for the camera permission by itself: when it is opened to scan (no photo under review, the
+ * check not over) and the permission is missing - and only the first time, so that a user who said no and went on with
+ * photos from the gallery is not asked again.
+ */
+internal fun shouldAskForCamera(hasPermission: Boolean, isReviewing: Boolean, checkFinished: Boolean, alreadyAsked: Boolean) =
+    !hasPermission && !isReviewing && !checkFinished && !alreadyAsked
 
 private fun isCameraPermissionGranted(context: Context) =
     ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED

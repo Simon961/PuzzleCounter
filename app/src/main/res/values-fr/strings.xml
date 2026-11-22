@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- French texts of Piece Counter. Keep the keys and placeholders the same in every language file (checked by StringResourcesTest). -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <string name="action_back">Retour</string>
+    <string name="action_next">Suivant</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_confirm">Valider</string>
+    <string name="action_close">Fermer</string>
+
+    <string name="settings">Paramètres</string>
+
+    <string name="upload_photo">Importer une photo</string>
+
+    <string name="start_new_check">Vérifier un puzzle</string>
+    <string name="start_recent_checks">Vérifications récentes</string>
+    <string name="start_no_checks">Aucune vérification pour l\'instant</string>
+
+    <string name="history_target_counted">Attendu : %1$,d  |  Compté : %2$,d</string>
+    <string name="history_detail_photo_number">Photo %1$d</string>
+    <string name="history_detail_photo_warned">Conservée malgré un avertissement de qualité</string>
+    <string name="history_detail_photos_unknown">Les chiffres de chaque photo n\'ont pas été enregistrés pour cette vérification.</string>
+
+    <string name="selection_title">Choisir la taille</string>
+    <string name="selection_custom_label">Ou saisir un autre nombre</string>
+    <string name="selection_custom_hint">Nombre de pièces indiqué sur la boîte</string>
+
+    <string name="instruction_title">Mode d\'emploi</string>
+    <string name="instruction_preparation">Préparation</string>
+    <string name="instruction_single_pile">Toutes les pièces tiennent sur une photo. Étalez-les à plat, en laissant un peu d\'espace entre elles.</string>
+    <string name="instruction_important">Important : étalez chaque tas bien à plat. Les pièces ne doivent pas se superposer et, si possible, ne pas se toucher.</string>
+    <string name="instruction_square_frame">Seul le cadre carré est photographié et analysé. Toutes les pièces d\'un tas doivent s\'y trouver entièrement. Vous pouvez aussi importer une photo existante (icône à côté du bouton).</string>
+    <string name="instruction_start_scan">Lancer le scan</string>
+
+    <string name="result_title_complete">Parfait !</string>
+    <string name="result_message_complete">Toutes les pièces sont là.</string>
+    <string name="result_title_missing">Attention !</string>
+    <string name="result_hint_missing">Vérifiez que toutes les pièces sont sur la photo : les pièces cachées sous d\'autres ou hors de la photo ne sont pas détectées.</string>
+    <string name="result_title_too_many">Plus de pièces que prévu</string>
+    <string name="result_hint_too_many">Raisons possibles : le puzzle a plus de pièces qu\'indiqué, des pièces d\'un autre puzzle s\'y sont glissées, ou des pièces ont été comptées deux fois.</string>
+    <string name="result_accuracy_advice">Pour en être sûr, espacez bien les pièces et recomptez.</string>
+    <string name="result_figure_box">Boîte</string>
+    <string name="result_figure_scanned">Scannées</string>
+    <string name="result_figure_possible">Possible</string>
+    <string name="result_message_other_size">Vous avez choisi %1$,d. Avez-vous sélectionné la bonne taille de puzzle ? Vérifiez le nombre de pièces sur la boîte.</string>
+    <string name="result_tip_edge_pieces">Pour vérifier, comptez les pièces de bord (avec les 4 coins) : pour une grille de %1$s, il y en a %2$d.</string>
+    <string name="result_tip_edge_compare">Pour les distinguer, comptez les pièces de bord (avec les 4 coins) : %1$d → %3$,d (grille %2$s), %4$d → %6$,d (grille %5$s).</string>
+
+    <string name="camera_permission_needed">Pour photographier les pièces du puzzle, l\'application a besoin d\'accéder à l\'appareil photo.</string>
+    <string name="camera_permission_denied">L\'accès à l\'appareil photo a été refusé. Vous pouvez l\'autoriser dans les paramètres de l\'application.</string>
+    <string name="camera_permission_grant">Autoriser</string>
+    <string name="camera_permission_open_settings">Ouvrir les paramètres</string>
+
+    <string name="upload_photo_instead">Importer une photo</string>
+
+    <string name="camera_failed">Impossible de démarrer l\'appareil photo. Vous pouvez importer une photo à la place (icône en bas à gauche).</string>
+
+    <string name="capture_failed">La prise de vue a échoué. Veuillez réessayer.</string>
+    <string name="capture_pile_progress">Tas %1$d / %2$d</string>
+    <string name="capture_single_photo">Toutes les pièces sur une photo</string>
+
+    <string name="torch_on">Allumer la lampe</string>
+    <string name="torch_off">Éteindre la lampe</string>
+
+    <string name="take_photo">Prendre une photo</string>
+
+    <string name="review_photo_description">Photo analysée</string>
+
+    <string name="analyzing_photo">Analyse de la photo…</string>
+    <string name="analyzing_pile">Analyse du tas %1$d sur %2$d…</string>
+
+    <string name="action_confirm_continue">Valider et continuer</string>
+    <string name="action_choose_other_photo">Choisir une autre photo</string>
+    <string name="action_retake">Reprendre la photo</string>
+    <string name="action_choose_other_photo_recommended">Choisir une autre photo (conseillé)</string>
+    <string name="action_retake_recommended">Reprendre (conseillé)</string>
+    <string name="action_continue_anyway">Continuer quand même</string>
+
+    <string name="issue_too_dark">Trop sombre ! Ajoutez de la lumière.</string>
+    <string name="issue_overexposed">Photo surexposée ! Évitez la lumière éblouissante.</string>
+    <string name="issue_blurry">Photo floue ! Reprenez-la sans bouger ou choisissez une photo plus nette.</string>
+    <string name="issue_pieces_too_small">Les pièces sont trop petites sur la photo pour un comptage fiable ! Rapprochez-vous du tas ou disposez moins de pièces par photo.</string>
+    <string name="issue_stacked">Des pièces se chevauchent ! Étalez-les bien à plat, côte à côte.</string>
+    <string name="issue_analysis_failed">L\'analyse a échoué. Réessayez avec une nouvelle photo.</string>
+    <string name="issue_model_unavailable">Impossible de démarrer la reconnaissance d\'image. Vérifiez que les services Google Play sont à jour et qu\'une connexion Internet est disponible au premier lancement, puis réessayez.</string>
+    <string name="issue_out_of_memory">Mémoire insuffisante pour l\'analyse. Fermez d\'autres applications et réessayez.</string>
+
+    <string name="frame_title">Cadrer la photo</string>
+    <string name="frame_open_failed">Impossible d\'ouvrir la photo.</string>
+    <string name="frame_instructions">Déplacez la photo et zoomez à deux doigts jusqu\'à ce que toutes les pièces soient dans le carré. Seul ce qui est visible dans le carré est compté.</string>
+    <string name="frame_square_description">Carré : déplacer et zoomer la photo</string>
+
+    <string name="settings_background_title">Fond et apparence</string>
+    <string name="settings_background_summary">Choisir une image et régler la luminosité</string>
+    <string name="settings_language_title">Langue</string>
+    <string name="settings_info_title">Infos et mentions légales</string>
+    <string name="settings_info_summary">Version, confidentialité et licences</string>
+
+    <string name="language_system_default">Langue du système</string>
+
+    <string name="background_title">Image de fond</string>
+    <string name="background_appearance">Apparence</string>
+    <string name="background_brightness">Luminosité</string>
+    <string name="background_brightness_value">%1$d %%</string>
+    <string name="background_selected">Sélectionné</string>
+    <string name="background_cyber_indigo">Cyber indigo</string>
+    <string name="background_tech_symmetry">Symétrie tech</string>
+    <string name="background_obsidian_edges">Arêtes d\'obsidienne</string>
+    <string name="background_dice_board">Dés et plateau</string>
+
+    <string name="info_title">À propos de Piece Counter</string>
+    <string name="info_version">Version %1$s (build %2$d)</string>
+    <string name="info_version_unknown">Version inconnue</string>
+    <string name="info_privacy_title">Appareil photo, photos et confidentialité</string>
+    <string name="info_privacy_text">Piece Counter utilise l\'appareil photo (ou une photo choisie dans votre galerie) uniquement pour détecter et compter les pièces de puzzle. Les photos sont analysées directement sur votre appareil par un modèle TensorFlow Lite intégré et ne sont jamais envoyées à des serveurs, à des services cloud ni à des tiers. Une photo ne reste sur votre appareil que le temps de consulter son analyse et est supprimée dès que vous continuez, la reprenez ou fermez la vérification ; l\'historique ne conserve que les chiffres de chaque vérification.</string>
+    <string name="info_privacy_services_text">L\'environnement d\'exécution TensorFlow Lite qui exécute le modèle est fourni par les services Google Play. Il peut télécharger des mises à jour depuis Google et envoie à Google des données techniques de diagnostic et d\'utilisation le concernant (par exemple le modèle de l\'appareil, la version d\'Android et de l\'application, un identifiant de l\'appareil, les erreurs et la vitesse), comme décrit dans les règles de confidentialité de Google – mais jamais vos photos.</string>
+    <string name="info_privacy_policy_text">La politique de confidentialité complète de cette application est publiée en ligne :</string>
+    <string name="info_developer_title">Développeur</string>
+    <string name="info_developer_text">Développée comme projet personnel pour compter les pièces de puzzle.</string>
+    <string name="info_link_open">Ouvrir dans le navigateur</string>
+    <string name="info_link_failed">Aucune application trouvée pour ouvrir ce lien.</string>
+    <string name="info_licenses_title">Licences et mentions légales</string>
+    <string name="info_licenses_intro">Piece Counter est construite avec des logiciels open source, les services Google Play et un modèle de détection d\'objets. Leurs mentions figurent ici ; les textes complets des licences se trouvent tout en bas de cette page.</string>
+    <string name="info_components_title">Composants utilisés</string>
+    <string name="info_component_model_name">Modèle de détection d\'objets (Ultralytics YOLO26)</string>
+    <string name="info_model_title">À propos du modèle de détection</string>
+    <string name="info_model_text">Le modèle qui repère les pièces de puzzle sur vos photos a été entraîné avec Ultralytics YOLO (YOLO26) et est placé sous la licence GNU Affero General Public License v3.0 (AGPL-3.0). Ultralytics publie ici les conditions de la licence et le code source d\'Ultralytics YOLO :</string>
+    <string name="info_license_texts_title">Textes des licences</string>
+    <string name="info_license_texts_note">Seul le texte original anglais d\'une licence fait foi ; les textes ci-dessous sont donc affichés en anglais dans toutes les langues.</string>
+    <string name="info_license_google_title">Conditions des services Google Play</string>
+    <string name="info_license_google_text">Les services Google Play sont fournis par Google LLC dans le cadre de l\'Android Software Development Kit License Agreement ; l\'utilisation de l\'environnement d\'exécution TensorFlow Lite dans les services Google Play est soumise aux Google APIs Terms of Service. Google publie ces conditions en ligne, où l\'on peut consulter les versions en vigueur :</string>
+    <string name="info_license_state_expanded">Développé</string>
+    <string name="info_license_state_collapsed">Réduit</string>
+
+    <string name="maker_us_standard">Standard américain</string>
+    <string name="maker_various">Plusieurs marques</string>
+
+    <!-- Plurals: the number that selects the form is also inserted as %d. -->
+    <plurals name="pieces_word" tools:ignore="ImpliedQuantity">
+        <item quantity="one">pièce</item>
+        <item quantity="many">pièces</item>
+        <item quantity="other">pièces</item>
+    </plurals>
+    <plurals name="pieces_count">
+        <item quantity="one">%,d pièce</item>
+        <item quantity="many">%,d pièces</item>
+        <item quantity="other">%,d pièces</item>
+    </plurals>
+    <plurals name="history_entry_title">
+        <item quantity="one">Puzzle de %,d pièce</item>
+        <item quantity="many">Puzzle de %,d pièces</item>
+        <item quantity="other">Puzzle de %,d pièces</item>
+    </plurals>
+    <plurals name="history_detail_photos">
+        <item quantity="one">%d photo</item>
+        <item quantity="many">%d photos</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+    <plurals name="instruction_several_piles">
+        <item quantity="one">Répartissez le puzzle en %1$d tas de taille similaire (environ %2$d pièces par photo).</item>
+        <item quantity="many">Répartissez le puzzle en %1$d tas de taille similaire (environ %2$d pièces par photo).</item>
+        <item quantity="other">Répartissez le puzzle en %1$d tas de taille similaire (environ %2$d pièces par photo).</item>
+    </plurals>
+    <plurals name="result_message_missing">
+        <item quantity="one">Il manque %,d pièce.</item>
+        <item quantity="many">Il manque %,d pièces.</item>
+        <item quantity="other">Il manque %,d pièces.</item>
+    </plurals>
+    <plurals name="result_message_too_many">
+        <item quantity="one">%,d pièce de plus que prévu a été comptée.</item>
+        <item quantity="many">%,d pièces de plus que prévu ont été comptées.</item>
+        <item quantity="other">%,d pièces de plus que prévu ont été comptées.</item>
+    </plurals>
+    <plurals name="result_estimate">
+        <item quantity="one">À %d endroit, des pièces se chevauchaient ou se touchaient : le nombre y est estimé. Pour un résultat exact, espacez bien les pièces.</item>
+        <item quantity="many">À %d endroits, des pièces se chevauchaient ou se touchaient : le nombre y est estimé. Pour un résultat exact, espacez bien les pièces.</item>
+        <item quantity="other">À %d endroits, des pièces se chevauchaient ou se touchaient : le nombre y est estimé. Pour un résultat exact, espacez bien les pièces.</item>
+    </plurals>
+    <plurals name="result_accuracy_missing">
+        <item quantity="one">L\'écart reste dans la marge de précision du comptage (environ ±%d pièce) : il ne manque peut-être rien.</item>
+        <item quantity="many">L\'écart reste dans la marge de précision du comptage (environ ±%d pièces) : il ne manque peut-être rien.</item>
+        <item quantity="other">L\'écart reste dans la marge de précision du comptage (environ ±%d pièces) : il ne manque peut-être rien.</item>
+    </plurals>
+    <plurals name="result_accuracy_too_many">
+        <item quantity="one">L\'écart reste dans la marge de précision du comptage (environ ±%d pièce) : il n\'y a peut-être pas plus de pièces qu\'indiqué.</item>
+        <item quantity="many">L\'écart reste dans la marge de précision du comptage (environ ±%d pièces) : il n\'y a peut-être pas plus de pièces qu\'indiqué.</item>
+        <item quantity="other">L\'écart reste dans la marge de précision du comptage (environ ±%d pièces) : il n\'y a peut-être pas plus de pièces qu\'indiqué.</item>
+    </plurals>
+    <plurals name="review_estimated_places">
+        <item quantity="one">%d endroit avec des pièces superposées : estimation</item>
+        <item quantity="many">%d endroits avec des pièces superposées : estimation</item>
+        <item quantity="other">%d endroits avec des pièces superposées : estimation</item>
+    </plurals>
+    <plurals name="result_scanned">
+        <item quantity="one">%,d pièce scannée</item>
+        <item quantity="many">%,d pièces scannées</item>
+        <item quantity="other">%,d pièces scannées</item>
+    </plurals>
+    <plurals name="result_title_exact_variant">
+        <item quantity="one">Votre puzzle pourrait contenir %,d pièce</item>
+        <item quantity="many">Votre puzzle pourrait contenir %,d pièces</item>
+        <item quantity="other">Votre puzzle pourrait contenir %,d pièces</item>
+    </plurals>
+    <plurals name="result_message_exact_variant">
+        <item quantity="one">Sur la boîte, il est écrit %1$,d, mais ce chiffre est souvent arrondi : certains puzzles ont exactement %2$,d pièce. Relisez attentivement le nombre de pièces sur la boîte.</item>
+        <item quantity="many">Sur la boîte, il est écrit %1$,d, mais ce chiffre est souvent arrondi : certains puzzles ont exactement %2$,d pièces. Relisez attentivement le nombre de pièces sur la boîte.</item>
+        <item quantity="other">Sur la boîte, il est écrit %1$,d, mais ce chiffre est souvent arrondi : certains puzzles ont exactement %2$,d pièces. Relisez attentivement le nombre de pièces sur la boîte.</item>
+    </plurals>
+    <plurals name="result_title_other_size">
+        <item quantity="one">Correspond à un puzzle de %,d pièce</item>
+        <item quantity="many">Correspond à un puzzle de %,d pièces</item>
+        <item quantity="other">Correspond à un puzzle de %,d pièces</item>
+    </plurals>
+    <plurals name="result_note_larger_variant">
+        <item quantity="one">Remarque : certains puzzles portant l\'indication %1$,d ont en réalité %2$,d pièce. Dans ce cas, il en manquerait %3$d.</item>
+        <item quantity="many">Remarque : certains puzzles portant l\'indication %1$,d ont en réalité %2$,d pièces. Dans ce cas, il en manquerait %3$d.</item>
+        <item quantity="other">Remarque : certains puzzles portant l\'indication %1$,d ont en réalité %2$,d pièces. Dans ce cas, il en manquerait %3$d.</item>
+    </plurals>
+</resources>

@@ -1,6 +1,5 @@
 package com.example.puzzlecounter.analyzer
 
-import android.graphics.Bitmap
 import android.graphics.Path
 import android.graphics.Rect
 
@@ -20,8 +19,6 @@ class DetectedPiece(
 
 class DetectionResult(
     val pieces: List<DetectedPiece>,
-    /** All contours drawn on black (debug image). */
-    val maskImage: Bitmap,
     imageArea: Int,
     /**
      * How big a typical piece is in the photo: the edge of a square of the typical piece's area, as a share of the

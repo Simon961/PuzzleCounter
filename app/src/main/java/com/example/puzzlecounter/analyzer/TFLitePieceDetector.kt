@@ -2,7 +2,6 @@ package com.example.puzzlecounter.analyzer
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
@@ -101,7 +100,7 @@ class TFLitePieceDetector(private val model: PuzzleModel) {
         return boxes
     }
 
-    /** Builds the contour of every box, counts the pieces in them and draws all contours into the mask image. */
+    /** Builds the contour of every box and counts the pieces in them. */
     private fun classify(source: Bitmap, boxes: List<BBox>, lb: Letterbox, output: ModelOutput): DetectionResult {
         val blobs = boxes.mapNotNull { box ->
             val rect = Rect(
@@ -120,21 +119,10 @@ class TFLitePieceDetector(private val model: PuzzleModel) {
             DetectedPiece(blob.contour.path, blob.rect, blob.contour.area, blob.score, counts[i])
         }
 
-        val maskImage = createBitmap(source.width, source.height)
-        val maskCanvas = Canvas(maskImage).apply { drawColor(Color.BLACK) }
-        for (piece in pieces) {
-            val paint = when {
-                piece.pieceCount > 1 -> clusterPaint
-                piece.pieceCount == 1 -> singlePaint
-                else -> insidePaint
-            }
-            maskCanvas.drawPath(piece.path, paint.fill)
-            maskCanvas.drawPath(piece.path, paint.stroke)
-        }
         // The area is counted in pixels of the photo, the model sees it letterboxed: both lengths scale with lb.scale.
         val typicalEdgeShare = PieceCounting.typicalPieceArea(blobs.map { it.contour.area })
             ?.let { sqrt(it) * lb.scale / model.inputSize }
-        return DetectionResult(pieces, maskImage, source.width * source.height, typicalEdgeShare)
+        return DetectionResult(pieces, source.width * source.height, typicalEdgeShare)
     }
 
     /**
@@ -229,15 +217,6 @@ class TFLitePieceDetector(private val model: PuzzleModel) {
         val union = (b1.xmax - b1.xmin) * (b1.ymax - b1.ymin) + (b2.xmax - b2.xmin) * (b2.ymax - b2.ymin) - interArea
         return if (union > 0f) interArea / union else 0f
     }
-
-    private class MaskPaint(baseColor: Int, fillAlpha: Int) {
-        val fill = Paint().apply { color = baseColor; style = Paint.Style.FILL; alpha = fillAlpha; isAntiAlias = true }
-        val stroke = Paint().apply { color = baseColor; style = Paint.Style.STROKE; strokeWidth = 4f; isAntiAlias = true }
-    }
-
-    private val singlePaint = MaskPaint(Color.WHITE, 255)
-    private val clusterPaint = MaskPaint(Color.YELLOW, 200)
-    private val insidePaint = MaskPaint(Color.MAGENTA, 120)
 
     private companion object {
         /**

@@ -1,0 +1,10 @@
+# Keep rules of the release build (R8).
+
+# TensorFlow Lite from Google Play services: the runtime is not part of the app, it is loaded from the Play services
+# and implements the interfaces of these packages, which it finds by their names (and builds by reflection). Without
+# these rules R8 renames them and the model can no longer be loaded ("Couldn't find TensorFlow Lite runtime's
+# InterpreterFactoryImpl class").
+-keep class org.tensorflow.lite.** { *; }
+-keep class com.google.android.gms.tflite.** { *; }
+-keep class com.google.android.gms.internal.tflite.** { *; }
+-dontwarn org.tensorflow.lite.**

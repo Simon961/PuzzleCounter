@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Phones keep the app upright: every screen is made for portrait, and so is the square camera frame.
+         Tablets and unfolded foldables (values-sw600dp) are not locked. -->
+    <bool name="lock_portrait">true</bool>
+</resources>

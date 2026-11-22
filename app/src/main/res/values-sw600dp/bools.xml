@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Large screens: Android 16 and newer ignores an orientation lock there anyway, and Google Play expects apps
+         to work in both orientations on them. -->
+    <bool name="lock_portrait">false</bool>
+</resources>

@@ -1,6 +1,7 @@
 package com.example.puzzlecounter.ui
 
 import android.content.pm.PackageManager
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +22,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import com.example.puzzlecounter.R
 
+/** The privacy policy of the app on the web (also given in the Play Console, which wants it inside the app as well). */
+internal const val PRIVACY_POLICY_URL = "https://sites.google.com/view/piece-scanner/startseite"
+
+/**
+ * About the app. The top of the page is information about this app (version, privacy, developer); everything about
+ * third-party software is in [LicensesSection] at the bottom, and the license texts themselves come last.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoScreen(uiState: PuzzleUiState, onBack: () -> Unit) {
@@ -65,11 +73,7 @@ fun InfoScreen(uiState: PuzzleUiState, onBack: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
 
                 // Header Card
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
+                InfoCard {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -106,78 +110,69 @@ fun InfoScreen(uiState: PuzzleUiState, onBack: () -> Unit) {
 
                 Spacer(Modifier.height(16.dp))
 
-                // Privacy Card
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
+                // Privacy Card: what the app does with photos, what the Google Play services runtime does on its own, the full policy
+                InfoCard {
                     Column(modifier = Modifier.padding(24.dp)) {
-                        Text(
-                            text = stringResource(R.string.info_privacy_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        CardTitle(R.string.info_privacy_title)
                         Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.info_privacy_text),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        CardText(R.string.info_privacy_text)
+                        Spacer(Modifier.height(12.dp))
+                        CardText(R.string.info_privacy_services_text)
+                        LinkRow(GOOGLE_PRIVACY_URL)
+                        Spacer(Modifier.height(12.dp))
+                        CardText(R.string.info_privacy_policy_text)
+                        LinkRow(PRIVACY_POLICY_URL)
                     }
                 }
 
                 Spacer(Modifier.height(16.dp))
 
                 // Developer Card
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
+                InfoCard {
                     Column(modifier = Modifier.padding(24.dp)) {
-                        Text(
-                            text = stringResource(R.string.info_developer_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        CardTitle(R.string.info_developer_title)
                         Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.info_developer_text),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        CardText(R.string.info_developer_text)
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(32.dp))
 
-                // Open Source Card
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Text(
-                            text = stringResource(R.string.info_open_source_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.info_open_source_text),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                // Everything about third-party software, the license texts at the very end
+                LicensesSection()
 
                 Spacer(Modifier.height(32.dp))
             }
         }
     }
+}
+
+/** The card the pages of the app use for a block of information. */
+@Composable
+internal fun InfoCard(content: @Composable ColumnScope.() -> Unit) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+        shape = RoundedCornerShape(20.dp),
+        content = content
+    )
+}
+
+@Composable
+internal fun CardTitle(@StringRes title: Int) {
+    Text(
+        text = stringResource(title),
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+@Composable
+internal fun CardText(@StringRes text: Int) {
+    Text(
+        text = stringResource(text),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }

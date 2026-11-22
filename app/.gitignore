@@ -1,1 +1,3 @@
 /build
+# output folder of "Generate Signed Bundle / APK" in Android Studio (bundle + mapping file, ~140 MB)
+/release

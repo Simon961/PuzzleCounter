@@ -39,12 +39,7 @@ class RealPhotoCountInstrumentedTest {
         val model = PuzzleModel.create(InstrumentationRegistry.getInstrumentation().targetContext)
         val photo = load(index)
         try {
-            val result = TFLitePieceDetector(model).detectPieces(photo)
-            try {
-                return block(photo, result)
-            } finally {
-                result.maskImage.recycle()
-            }
+            return block(photo, TFLitePieceDetector(model).detectPieces(photo))
         } finally {
             photo.recycle()
             model.close()
@@ -100,8 +95,8 @@ class RealPhotoCountInstrumentedTest {
             try {
                 for (index in listOf(1, 4)) {
                     val photo = load(index)
-                    val onGpu = TFLitePieceDetector(gpu).detectPieces(photo).let { it.pieceCount.also { _ -> it.maskImage.recycle() } }
-                    val onCpu = TFLitePieceDetector(cpu).detectPieces(photo).let { it.pieceCount.also { _ -> it.maskImage.recycle() } }
+                    val onGpu = TFLitePieceDetector(gpu).detectPieces(photo).pieceCount
+                    val onCpu = TFLitePieceDetector(cpu).detectPieces(photo).pieceCount
                     photo.recycle()
                     assertTrue("Haufen $index: GPU zählt $onGpu, CPU $onCpu", abs(onGpu - onCpu) <= 2)
                 }
@@ -136,7 +131,7 @@ class RealPhotoCountInstrumentedTest {
         val pile = load(4)
         try {
             val checker = ImageQualityChecker()
-            val reference = TFLitePieceDetector(model).detectPieces(pile).let { it.pieceCount.also { _ -> it.maskImage.recycle() } }
+            val reference = TFLitePieceDetector(model).detectPieces(pile).pieceCount
             for ((scale, tooSmall) in listOf(0.6f to false, 0.45f to true)) {
                 val distant = shrunkOnTable(pile, scale)
                 val result = TFLitePieceDetector(model).detectPieces(distant)
@@ -144,7 +139,6 @@ class RealPhotoCountInstrumentedTest {
                 val small = quality.issue == PhotoIssue.PIECES_TOO_SMALL
                 assertTrue("Maßstab $scale: Teilekante ${result.typicalPieceEdgeShare}, Meldung ${quality.issue}", small == tooSmall)
                 if (!tooSmall) assertTrue("Maßstab $scale: ${result.pieceCount} statt $reference", abs(result.pieceCount - reference) <= 3)
-                result.maskImage.recycle()
                 distant.recycle()
             }
         } finally {

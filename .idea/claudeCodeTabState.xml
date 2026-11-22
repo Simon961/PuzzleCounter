@@ -14,7 +14,7 @@
               <option name="permissionMode" value="bypassPermissions" />
               <option name="reasoningEffort" value="max" />
               <option name="claudeSupplierId" value="__cli_login__" />
-              <option name="codexSupplierId" value="__session_supplier_unavailable__" />
+              <option name="codexSupplierId" value="__codex_cli_login__" />
               <option name="ompApprovalMode" value="" />
             </TabSessionState>
           </value>
