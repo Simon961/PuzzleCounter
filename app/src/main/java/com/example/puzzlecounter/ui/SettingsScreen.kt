@@ -2,7 +2,6 @@ package com.example.puzzlecounter.ui
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,10 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.puzzlecounter.R
@@ -44,6 +42,9 @@ data class AppBackgroundItem(
     @param:StringRes val titleRes: Int,
     @param:DrawableRes val drawableRes: Int,
 )
+
+/** The width of the preview of a background image in the choice of the background. */
+private val THUMBNAIL_WIDTH = 100.dp
 
 val availableBackgrounds = listOf(
     AppBackgroundItem("bg_default", R.string.background_cyber_indigo, R.drawable.app_background),
@@ -221,6 +222,7 @@ fun BackgroundSettingsScreen(uiState: PuzzleUiState, viewModel: PuzzleViewModel,
                         Text(stringResource(R.string.background_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(16.dp))
 
+                        val thumbnailWidthPx = with(LocalDensity.current) { THUMBNAIL_WIDTH.roundToPx() }
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -228,16 +230,17 @@ fun BackgroundSettingsScreen(uiState: PuzzleUiState, viewModel: PuzzleViewModel,
                                 val isSelected = uiState.selectedBackgroundId == item.drawableRes
                                 Box(
                                     modifier = Modifier
-                                        .width(100.dp)
+                                        .width(THUMBNAIL_WIDTH)
                                         .height(180.dp)
                                         .clip(RoundedCornerShape(16.dp))
                                         .clickable { viewModel.updateBackgroundId(item.drawableRes) }
                                 ) {
-                                    Image(
-                                        painter = painterResource(id = item.drawableRes),
-                                        contentDescription = stringResource(item.titleRes),
+                                    // a small copy of the image, decoded off the main thread (see BackgroundImages)
+                                    BackgroundImage(
+                                        id = item.drawableRes,
+                                        targetWidthPx = thumbnailWidthPx,
                                         modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
+                                        contentDescription = stringResource(item.titleRes)
                                     )
                                     if (isSelected) {
                                         Box(

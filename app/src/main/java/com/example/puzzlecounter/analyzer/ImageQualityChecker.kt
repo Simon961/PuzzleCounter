@@ -2,8 +2,8 @@ package com.example.puzzlecounter.analyzer
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Rect
 import androidx.core.graphics.scale
-import kotlin.math.abs
 import kotlin.math.max
 
 /**
@@ -28,25 +28,27 @@ data class QualityResult(val issue: PhotoIssue? = null) {
     val isAcceptable: Boolean get() = issue == null
 }
 
-/** What [ImageQualityChecker] measures of a photo. */
-internal class PhotoMeasurements(
-    /** Mean brightness, 0 (black) to 255 (white). */
-    val averageLuminance: Int,
-    /** Variance of the Laplacian response: low values mean a blurry photo. */
-    val sharpness: Double,
-)
-
 /** Cheap sanity checks of a photo (stacked pieces, brightness, sharpness) before the user confirms it. */
 class ImageQualityChecker {
 
     /**
      * The first problem found. Light, sharpness and the size of the pieces come before [hasHugeStacks]: a dark, blurry
      * or distant photo makes the detector merge pieces into blobs, so stacks seen in it are a symptom, not the cause.
-     * [pieceEdgeShare] is [DetectionResult.typicalPieceEdgeShare], null if unknown.
+     * [pieceEdgeShare] is [DetectionResult.typicalPieceEdgeShare], null if unknown. [pieceBoxes] are the boxes of the
+     * pieces the detector found, in pixels of [bitmap] ([DetectedPiece.rect]): where the pieces cover little of the
+     * photo, light and sharpness are judged there and not over the empty table around them (see [PhotoMeasuring]).
+     * Without boxes the whole photo is judged.
      */
-    fun checkQuality(bitmap: Bitmap, hasHugeStacks: Boolean, pieceEdgeShare: Float? = null): QualityResult {
-        val measurements = measure(bitmap)
-        return when {
+    fun checkQuality(
+        bitmap: Bitmap,
+        hasHugeStacks: Boolean,
+        pieceEdgeShare: Float? = null,
+        pieceBoxes: List<Rect> = emptyList(),
+    ): QualityResult = decide(measure(bitmap, pieceBoxes), hasHugeStacks, pieceEdgeShare)
+
+    /** The verdict on [measurements]; the first problem in the order of [checkQuality]. */
+    internal fun decide(measurements: PhotoMeasurements, hasHugeStacks: Boolean, pieceEdgeShare: Float?): QualityResult =
+        when {
             measurements.averageLuminance < MIN_LUMINANCE -> QualityResult(PhotoIssue.TOO_DARK)
             measurements.averageLuminance > MAX_LUMINANCE -> QualityResult(PhotoIssue.OVEREXPOSED)
             measurements.sharpness < MIN_SHARPNESS -> QualityResult(PhotoIssue.BLURRY)
@@ -54,9 +56,17 @@ class ImageQualityChecker {
             hasHugeStacks -> QualityResult(PhotoIssue.STACKED_PIECES)
             else -> QualityResult()
         }
-    }
 
-    internal fun measure(bitmap: Bitmap): PhotoMeasurements {
+    internal fun measure(bitmap: Bitmap, pieceBoxes: List<Rect> = emptyList()): PhotoMeasurements =
+        PhotoMeasuring.measure(
+            grayPlane(bitmap),
+            bitmap.width,
+            bitmap.height,
+            pieceBoxes.map { PieceBox(it.left, it.top, it.right, it.bottom) },
+        )
+
+    /** The gray values of [bitmap], shrunk to [ANALYSIS_SIZE] pixels on the long side. */
+    private fun grayPlane(bitmap: Bitmap): GrayPlane {
         val scale = ANALYSIS_SIZE / max(bitmap.width, bitmap.height)
         val small = if (scale < 1f) {
             bitmap.scale((bitmap.width * scale).toInt(), (bitmap.height * scale).toInt())
@@ -70,33 +80,12 @@ class ImageQualityChecker {
         small.getPixels(pixels, 0, width, 0, 0, width, height)
         if (small !== bitmap) small.recycle()
 
-        var totalLuminance = 0L
-        val grays = IntArray(pixels.size)
-        for (i in pixels.indices) {
+        // ITU-R BT.601 luma weights
+        val grays = IntArray(pixels.size) { i ->
             val p = pixels[i]
-            // ITU-R BT.601 luma weights
-            val lum = (0.299 * Color.red(p) + 0.587 * Color.green(p) + 0.114 * Color.blue(p)).toInt()
-            grays[i] = lum
-            totalLuminance += lum
+            (0.299 * Color.red(p) + 0.587 * Color.green(p) + 0.114 * Color.blue(p)).toInt()
         }
-
-        var laplaceSum = 0L
-        var laplaceSqSum = 0L
-        var laplaceCount = 0
-        for (y in 1 until height - 1) {
-            for (x in 1 until width - 1) {
-                val i = y * width + x
-                val laplace = abs(grays[i - width] + grays[i + width] + grays[i - 1] + grays[i + 1] - 4 * grays[i])
-                laplaceSum += laplace
-                laplaceSqSum += laplace * laplace
-                laplaceCount++
-            }
-        }
-        val mean = laplaceSum.toDouble() / laplaceCount
-        return PhotoMeasurements(
-            averageLuminance = (totalLuminance / pixels.size).toInt(),
-            sharpness = (laplaceSqSum.toDouble() / laplaceCount) - (mean * mean),
-        )
+        return GrayPlane(width, height, grays)
     }
 
     /**
@@ -117,6 +106,9 @@ class ImageQualityChecker {
      * photos were already off by 7 to 13 pieces, at 1.7 % by 11 to 21, and below that nothing was left of it. The
      * limit lies a tenth above the smallest size that counted well (2.2 % against 2.0 %), because other puzzles and
      * lighting may move the step upwards.
+     *
+     * These piles fill a quarter to a third of the photo. Where the pieces cover far less (a few pieces on a table)
+     * the limits for light and sharpness are applied to the region of the pieces, see [PhotoMeasuring].
      */
     private companion object {
         /** The photo is shrunk to this edge length before it is analysed. */

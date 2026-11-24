@@ -2,6 +2,8 @@ package com.example.puzzlecounter.analyzer
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Rect
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -54,10 +56,85 @@ class RealPhotoCountInstrumentedTest {
                 assertTrue("$name: ${result.pieceCount} Teile statt ${want.pieces}", abs(result.pieceCount - want.pieces) <= 2)
                 assertTrue("$name: ${result.clusterCount} Gruppen statt ${want.clusters}", abs(result.clusterCount - want.clusters) <= 1)
                 assertFalse("$name: normale Haufen sind keine Stapel", result.hasHugeStacks)
-                val quality = ImageQualityChecker().checkQuality(photo, result.hasHugeStacks)
+                val checker = ImageQualityChecker()
+                val quality = checker.checkQuality(photo, result.hasHugeStacks)
                 assertTrue("$name: scharfes, gut belichtetes Foto muss akzeptiert werden: ${quality.issue}", quality.isAcceptable)
+
+                // the way the app asks: with the pieces' boxes. These piles cover a quarter of the photo and more, so
+                // they are measured as a whole, to the last digit as without the boxes, and accepted
+                val boxes = result.pieces.map { it.rect }
+                val asApp = checker.checkQuality(photo, result.hasHugeStacks, result.typicalPieceEdgeShare, boxes)
+                assertTrue("$name: die App-Prüfung (mit Boxen) meldet ${asApp.issue}", asApp.isAcceptable)
+                val withBoxes = checker.measure(photo, boxes)
+                val whole = checker.measure(photo)
+                assertFalse("$name: ein Haufen wird als ganzes Foto gemessen", withBoxes.measuredOnPieces)
+                assertTrue("$name: Messwerte mit Boxen ${withBoxes.sharpness} statt ${whole.sharpness}", withBoxes.sharpness == whole.sharpness)
+                assertTrue(withBoxes.averageLuminance == whole.averageLuminance)
             }
         }
+    }
+
+    /**
+     * A few pieces on a plain table are the simplest photo there is. Pieces are cut out of pile 1, each along the
+     * contour the model found, and put well apart on a white sheet and on a gray mat: the model has to count them
+     * right, and the photo has to be accepted. The quality check once judged the empty table instead of the pieces and
+     * called such photos overexposed or blurry, and the right count stayed hidden.
+     */
+    @Test
+    fun fewPiecesOnAPlainTable_areCountedAndAccepted() {
+        val model = PuzzleModel.create(InstrumentationRegistry.getInstrumentation().targetContext)
+        val pile = load(1)
+        val scenes = mutableListOf<Bitmap>()
+        try {
+            val detector = TFLitePieceDetector(model)
+            val pieces = looselyLyingSinglePieces(detector.detectPieces(pile)).take(10)
+            assertTrue("zu wenige einzelne Teile: ${pieces.size}", pieces.size == 10)
+            val checker = ImageQualityChecker()
+            for ((table, count) in listOf(Color.rgb(245, 245, 245) to 10, Color.rgb(120, 120, 120) to 5)) {
+                val scene = piecesOnTable(pile, pieces.take(count), table).also { scenes += it }
+                val result = detector.detectPieces(scene)
+                val quality = checker.checkQuality(scene, result.hasHugeStacks, result.typicalPieceEdgeShare, result.pieces.map { it.rect })
+                val name = "Tisch #${Integer.toHexString(table)}"
+                assertTrue("$name: ${result.pieceCount} Teile statt $count", abs(result.pieceCount - count) <= 1)
+                assertTrue("$name: ${result.pieceCount} Teile, aber die Prüfung meldet ${quality.issue}", quality.isAcceptable)
+            }
+        } finally {
+            scenes.forEach { it.recycle() }
+            pile.recycle()
+            model.close()
+        }
+    }
+
+    /** Single pieces of a typical size, the least overlapped by other blobs first (ties: top to bottom, left to right). */
+    private fun looselyLyingSinglePieces(result: DetectionResult): List<DetectedPiece> {
+        val typical = result.pieces.map { it.area }.sorted().let { it[it.size / 2] }
+        fun overlap(piece: DetectedPiece) = result.pieces.filter { it !== piece }.sumOf { other ->
+            val common = Rect(piece.rect)
+            if (common.intersect(other.rect)) common.width() * common.height() else 0
+        }
+        return result.pieces
+            .filter { it.pieceCount == 1 && it.area in (typical * 0.85f).toInt()..(typical * 1.15f).toInt() }
+            .sortedWith(compareBy({ overlap(it) }, { it.rect.top }, { it.rect.left }))
+    }
+
+    /** [pieces] of [photo], cut out along their contours, in the cells of a wide grid on a table of one [table] colour. */
+    private fun piecesOnTable(photo: Bitmap, pieces: List<DetectedPiece>, table: Int): Bitmap {
+        val cell = 180
+        assertTrue("Teile für die Zellen zu groß", pieces.all { it.rect.width() < cell - 20 && it.rect.height() < cell - 20 })
+        val frame = androidx.core.graphics.createBitmap(photo.width, photo.height)
+        val canvas = Canvas(frame)
+        canvas.drawColor(table)
+        val columns = photo.width / cell
+        pieces.forEachIndexed { i, piece ->
+            val dx = (i % columns) * cell + (cell - piece.rect.width()) / 2 - piece.rect.left
+            val dy = (i / columns) * cell + (cell - piece.rect.height()) / 2 - piece.rect.top
+            canvas.save()
+            canvas.translate(dx.toFloat(), dy.toFloat())
+            canvas.clipPath(piece.path)
+            canvas.drawBitmap(photo, 0f, 0f, null)
+            canvas.restore()
+        }
+        return frame
     }
 
     /** Counted by hand on the photo: region A holds 26 pieces (3 clusters of two among them), region B 11 to 12. */

@@ -4,10 +4,10 @@ import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -36,12 +36,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,11 +56,11 @@ import java.util.Date
 @Composable
 fun AppBackground(uiState: PuzzleUiState, content: @Composable () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-            painter = painterResource(id = uiState.selectedBackgroundId),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+        // Decoded once and off the main thread (see BackgroundImages); until it is there the dark window shows.
+        BackgroundImage(
+            id = uiState.selectedBackgroundId,
+            targetWidthPx = screenWidthPx(),
+            modifier = Modifier.fillMaxSize()
         )
         Box(
             modifier = Modifier
@@ -257,7 +256,8 @@ fun SelectionScreen(uiState: PuzzleUiState, onNextClicked: (Int) -> Unit) {
         Scaffold(
             topBar = { TopAppBar(title = { Text(stringResource(R.string.selection_title), fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)) },
             containerColor = Color.Transparent,
-            modifier = Modifier.imePadding().clickable { focusManager.clearFocus() }
+            // A tap on the empty screen ends the input; a tap that a card or the text field takes is theirs (no ripple, no click semantics)
+            modifier = Modifier.imePadding().pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } }
         ) { padding ->
             Column(
                 modifier = Modifier

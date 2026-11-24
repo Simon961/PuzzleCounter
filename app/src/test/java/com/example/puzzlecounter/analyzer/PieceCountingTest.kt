@@ -71,6 +71,28 @@ class PieceCountingTest {
         assertTrue(PieceCounting.hasHugeStacks(emptyList(), List(160) { 1 } + List(20) { 2 }, imageArea))
     }
 
+    @Test
+    fun hugeStacks_aSinglePairInASmallPhotoIsNoHeap() {
+        val imageArea = 1080 * 1080
+        // ten pieces, one touching pair: 20 %, but a pair is within the counting accuracy and no heap
+        assertFalse(PieceCounting.hasHugeStacks(emptyList(), List(8) { 1 } + 2, imageArea))
+        // the same at the limits of the rule: 13 and 14 pieces with one pair
+        assertFalse(PieceCounting.hasHugeStacks(emptyList(), List(11) { 1 } + 2, imageArea))
+        assertFalse(PieceCounting.hasHugeStacks(emptyList(), List(12) { 1 } + 2, imageArea))
+    }
+
+    @Test
+    fun hugeStacks_moreThanAPairInASmallPhotoIsStillOne() {
+        val imageArea = 1080 * 1080
+        // two pairs among ten pieces
+        assertTrue(PieceCounting.hasHugeStacks(emptyList(), List(6) { 1 } + listOf(2, 2), imageArea))
+        // one cluster of three
+        assertTrue(PieceCounting.hasHugeStacks(emptyList(), List(7) { 1 } + 3, imageArea))
+        // 14 pieces: the share rule alone (15 % of 14 is 2.1) flags three clustered pieces, as before
+        assertTrue(PieceCounting.hasHugeStacks(emptyList(), List(11) { 1 } + 3, imageArea))
+        assertFalse(PieceCounting.hasHugeStacks(emptyList(), List(12) { 1 } + 2, imageArea))
+    }
+
     // --- blobs that lie on top of each other ---
 
     private fun blob(left: Int, top: Int, width: Int, height: Int) =

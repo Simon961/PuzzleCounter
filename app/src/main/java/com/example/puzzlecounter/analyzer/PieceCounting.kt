@@ -59,6 +59,15 @@ internal object PieceCounting {
     /** If more than this share of the pieces sit in clusters, their estimated number is too unreliable. */
     const val MAX_CLUSTERED_SHARE = 0.15f
 
+    /**
+     * The share rule needs more clustered pieces than this: a single cluster of two pieces is no heap, however few
+     * pieces the photo has. Of ten pieces one touching pair is 20 %, over the share, but the estimate for a pair is off
+     * by one piece at most - less than the counting accuracy of a photo (see `countingTolerance`) - and the photo
+     * says that the number is estimated there. For 14 pieces and more the share is above this number, so nothing
+     * changes for them (the test piles have about 200 pieces and about 5 % of them in clusters).
+     */
+    const val MIN_CLUSTERED_PIECES_FOR_STACKS = 2
+
     /** The area of a single piece in this photo (median of all blobs), or null if there are too few blobs. */
     fun typicalPieceArea(areas: List<Int>): Float? {
         if (areas.size < MIN_BLOBS_FOR_REFERENCE) return null
@@ -169,6 +178,7 @@ internal object PieceCounting {
     /** Whether the photo shows heaps of pieces: a blob far too large for a piece, or too many clustered pieces. */
     fun hasHugeStacks(areas: List<Int>, pieceCounts: List<Int>, imageArea: Int): Boolean {
         val clustered = pieceCounts.filter { it > 1 }.sum()
-        return areas.any { it > imageArea * MAX_BLOB_IMAGE_SHARE } || clustered > pieceCounts.sum() * MAX_CLUSTERED_SHARE
+        val tooManyClustered = clustered > maxOf(pieceCounts.sum() * MAX_CLUSTERED_SHARE, MIN_CLUSTERED_PIECES_FOR_STACKS.toFloat())
+        return areas.any { it > imageArea * MAX_BLOB_IMAGE_SHARE } || tooManyClustered
     }
 }

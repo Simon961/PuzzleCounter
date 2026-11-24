@@ -190,7 +190,12 @@ class PuzzleViewModel @JvmOverloads constructor(
                 bitmap = photo(loaded.inputSize)
                 scaled = scaleDown(bitmap, loaded.inputSize)
                 val result = detect(scaled)
-                val quality = ImageQualityChecker().checkQuality(scaled, result.hasHugeStacks, result.typicalPieceEdgeShare)
+                val quality = ImageQualityChecker().checkQuality(
+                    scaled,
+                    result.hasHugeStacks,
+                    result.typicalPieceEdgeShare,
+                    result.pieces.map { it.rect },
+                )
                 // The annotated photo doubles as preview of the photo.
                 val previewPath = photoStore.save(scaled, result)
 
